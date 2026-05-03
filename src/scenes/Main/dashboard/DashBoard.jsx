@@ -107,10 +107,11 @@ function Dashboard() {
     setTimeout(() => setRefreshing(false), 1500);
   };
 
-  const voltage = powerData?.voltage || powerData?.Voltage || "---";
-  const current = powerData?.current || powerData?.Current || "---";
-  const power = powerData?.power || powerData?.Power || "---";
-  const frequency = powerData?.frequency || powerData?.Frequency || "---";
+  const fmt = (v, d = 1) => { const n = parseFloat(v); return isNaN(n) ? "---" : n.toFixed(d); };
+  const voltage = fmt(powerData?.voltage || powerData?.Voltage);
+  const current = fmt(powerData?.current || powerData?.Current, 2);
+  const power = fmt(powerData?.power || powerData?.Power);
+  const frequency = fmt(powerData?.frequency || powerData?.Frequency, 2);
 
   const mainsState = loadData?.mains_state === "1" || loadData?.mains_state === 1;
   const geyserState = loadData?.geyser_state === "1" || loadData?.geyser_state === 1;
@@ -294,7 +295,7 @@ function Dashboard() {
             {healthData ? (
               <Box>
                 {[
-                  { label: "Temperature", val: healthData.temperature ? `${healthData.temperature}°C` : "N/A" },
+                  { label: "Temperature", val: healthData.temperature ? `${parseFloat(healthData.temperature).toFixed(1)}°C` : "N/A" },
                   { label: "Signal", val: healthData.signal_strength ? `${healthData.signal_strength}%` : "N/A" },
                   { label: "Uptime", val: healthData.uptime || "N/A" },
                 ].map((item, i) => (
