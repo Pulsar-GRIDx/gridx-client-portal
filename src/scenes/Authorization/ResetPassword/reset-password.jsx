@@ -6,106 +6,68 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useLocation } from 'react-router-dom';
+import { customerAuthAPI } from "../../../services/api";
 
-/**
- * @module Reset_Password
- */
-
-/**
- * ResetPassword component handles the process of resetting a user's password.
- *
- * @component
- * @example
- * return (
- *   <ResetPassword />
- * )
- */
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const token = queryParams.get('token');
-  const [PassReset, setPassReset] = useState({
-    temporary_password: "",
+  const [formData, setFormData] = useState({
+    email: "",
+    pin: "",
     new_password: "",
     confirm_password: "",
   });
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
 
-  const [PassResetErrors, setPassResetErrors] = useState({
-    temporary_password: "",
-    new_password: "",
-    confirm_password: "",
-  });
-
-  /**
-   * Handles input changes and updates the PassReset state.
-   *
-   * @param {Object} event - The input change event
-   */
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setPassReset({
-      ...PassReset,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
-  /**
-   * Validates the form inputs for resetting the password.
-   *
-   * @returns {boolean} - True if the form is valid, false otherwise.
-   */
   const validateForm = () => {
-    const errors = {};
-    if (!PassReset.temporary_password.trim()) {
-      errors.temporary_password = "Temporary password is required";
+    const errs = {};
+    if (!formData.email.trim()) {
+      errs.email = "Email is required";
     }
-    if (!PassReset.new_password.trim()) {
-      errors.new_password = "New Password is required";
+    if (!formData.pin.trim()) {
+      errs.pin = "Verification code is required";
+    }
+    if (!formData.new_password.trim()) {
+      errs.new_password = "New Password is required";
     } else if (
-      !PassReset.new_password.match(
+      !formData.new_password.match(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/
       )
     ) {
-      errors.new_password =
+      errs.new_password =
         "Password must be 8-24 characters and include at least one lowercase letter, one uppercase letter, one digit, and one special character (!@#$%).";
     }
-    if (!PassReset.confirm_password.trim()) {
-      errors.confirm_password = "Confirm Password is required";
-    } else if (PassReset.new_password !== PassReset.confirm_password) {
-      errors.confirm_password = "Passwords don't match";
+    if (!formData.confirm_password.trim()) {
+      errs.confirm_password = "Confirm Password is required";
+    } else if (formData.new_password !== formData.confirm_password) {
+      errs.confirm_password = "Passwords don't match";
     }
 
-    setPassResetErrors(errors);
-    return Object.keys(errors).length === 0;
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  /**
-   * Handles form submission for resetting the password.
-   *
-   * @param {Object} e - The form submit event
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    setApiError("");
+
     if (validateForm()) {
       try {
-        const response = await axios.post(
-          `https://backend1.gridxmeter.com/reset-password?token=${token}`,
-          { PassReset },
-          
+        await customerAuthAPI.resetPassword(
+          formData.email,
+          formData.pin,
+          formData.new_password,
+          formData.new_password
         );
-  
-        if (response.ok) {
-          navigate("/auth");
-        }
+        navigate("/");
       } catch (err) {
-        console.error("Error sending request:", err);
+        setApiError(err.message || "Password reset failed. Please try again.");
       }
-    } else {
-      console.log("Form is invalid. Please correct the errors.");
     }
   };
 
@@ -135,19 +97,36 @@ export default function ResetPassword() {
         <Typography component="h1" variant="h5">
           Reset Password
         </Typography>
+        {apiError && (
+          <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+            {apiError}
+          </Typography>
+        )}
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"
             required
             fullWidth
-            id="temporary_password"
-            label="Temporary password"
-            name="temporary_password"
-            type="password"
-            value={PassReset.temporary_password}
+            id="email"
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
             onChange={handleInputChange}
-            error={!!PassResetErrors.temporary_password}
-            helperText={PassResetErrors.temporary_password}
+            error={!!errors.email}
+            helperText={errors.email}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="pin"
+            label="Verification Code"
+            name="pin"
+            value={formData.pin}
+            onChange={handleInputChange}
+            error={!!errors.pin}
+            helperText={errors.pin}
           />
           <TextField
             margin="normal"
@@ -157,10 +136,10 @@ export default function ResetPassword() {
             label="New Password"
             type="password"
             id="new_password"
-            value={PassReset.new_password}
+            value={formData.new_password}
             onChange={handleInputChange}
-            error={!!PassResetErrors.new_password}
-            helperText={PassResetErrors.new_password}
+            error={!!errors.new_password}
+            helperText={errors.new_password}
           />
           <TextField
             margin="normal"
@@ -170,11 +149,10 @@ export default function ResetPassword() {
             label="Confirm Password"
             name="confirm_password"
             type="password"
-            autoFocus
-            value={PassReset.confirm_password}
+            value={formData.confirm_password}
             onChange={handleInputChange}
-            error={!!PassResetErrors.confirm_password}
-            helperText={PassResetErrors.confirm_password}
+            error={!!errors.confirm_password}
+            helperText={errors.confirm_password}
           />
           <Button
             type="submit"

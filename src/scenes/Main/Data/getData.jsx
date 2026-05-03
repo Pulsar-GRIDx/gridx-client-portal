@@ -1,40 +1,15 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import AuthContext from "../../../context/AuthContext";
-
-const MeterAPI = "https://backend1.gridxmeter.com/meterPower";
-const EnergyAPI = "https://backend1.gridxmeter.com/hourlyEnergyByDRN";
-const ProfileAPI = "https://backend1.gridxmeter.com/userData";
-const CurrentAPI = "https://backend1.gridxmeter.com/currentDayEnergy";
-const MonthPowerAPI = "https://backend1.gridxmeter.com/monthlyEnergyByDRN";
-const WeekPowerAPI = "https://backend1.gridxmeter.com/weeklyTotalEnergyByDRN";
-const TimePeriodsPowerAPI =
-  "https://backend1.gridxmeter.com/energyTimePeriodsByDRN";
-const TimePeriodsPercentagePowerAPI =
-  "https://backend1.gridxmeter.com/meterPowerIncreaseOrDecrease";
+import { meterDataAPI, energyDataAPI } from "../../../services/api";
 
 const DataContext = createContext();
 
-/**
- * @module Contexts
- */
-
-/**
- * Custom hook to use DataContext.
- * @returns {Object} The data context value.
- */
 export const useData = () => {
   return useContext(DataContext);
 };
 
-/**
- * DataProvider component to fetch and provide energy and user data.
- * @component
- * @param {Object} props - Component properties.
- * @param {ReactNode} props.children - Children components.
- * @returns {ReactNode} The DataContext provider with data values.
- */
 const DataProvider = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, userInfo } = useContext(AuthContext);
   const [unitsData, setUnitsData] = useState("");
   const [averageUnitsData, setAverageUnitsData] = useState("");
   const [allData, setAllData] = useState([]);
@@ -60,14 +35,12 @@ const DataProvider = ({ children }) => {
     Last: [],
     Current: [],
   });
-
   const [powerData, setPowerData] = useState({
     voltage: "",
     current: "",
     frequency: "",
     active_energy: "",
   });
-
   const [userData, setUserData] = useState({
     UserID: "",
     FirstName: "",
@@ -78,307 +51,197 @@ const DataProvider = ({ children }) => {
     cityName: "",
     countryName: "",
   });
-
   const [loadData, setLoadData] = useState({
-    mains_state: 0, // "0" for OFF, "1" for ON
-    geyser_state: 0, // "0" for OFF, "1" for ON
+    mains_state: 0,
+    geyser_state: 0,
   });
-
   const [signalStrengthData, setSignalStrengthData] = useState("");
 
-  /**
-   * Retrieve access token from session storage.
-   * @returns {string} Access token.
-   */
-  const getAccessToken = () => {
-    return sessionStorage.getItem("Token");
+  const getDRN = () => {
+    if (userInfo && userInfo.DRN) return userInfo.DRN;
+    const saved = sessionStorage.getItem("user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.DRN;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   };
 
-  /**
-   * Fetch meter power data.
-   */
-  const fetchData = async () => {
+  const fetchMeterPower = async () => {
+    const drn = getDRN();
+    if (!drn) return;
     try {
-      const meterResponse = await fetch(MeterAPI, {
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const meterJson = await meterResponse.json();
-      if (meterJson !== 0) {
-        setUnitsData(meterJson.units);
-        setAverageUnitsData(meterJson.units_used_today);
+      const data = await meterDataAPI.getPower(drn);
+      if (data && data !== 0) {
+        setUnitsData(data.units || data.active_energy || 0);
+        setAverageUnitsData(data.units_used_today || 0);
         setPowerData({
-          voltage: meterJson.voltage,
-          current: meterJson.current,
-          frequency: meterJson.frequency,
-          active_energy: meterJson.active_energy,
+          voltage: data.voltage || 0,
+          current: data.current || 0,
+          frequency: data.frequency || 0,
+          active_energy: data.active_energy || 0,
         });
-        setSignalStrengthData(meterJson.signal_strength);
+        setSignalStrengthData(data.signal_strength || 0);
       } else {
         setUnitsData(0);
         setAverageUnitsData(0);
-        setPowerData({
-          voltage: 0,
-          current: 0,
-          frequency: 0,
-          active_energy: 0,
-        });
+        setPowerData({ voltage: 0, current: 0, frequency: 0, active_energy: 0 });
         setSignalStrengthData(0);
       }
     } catch (error) {
-      console.error("Error fetching meter data:", error);
+      console.error("Error fetching meter power:", error);
     }
   };
 
-  /**
-   * Fetch hourly energy data.
-   */
-  const fetchData2 = async () => {
+  const fetchHourlyEnergy = async () => {
+    const drn = getDRN();
+    if (!drn) return;
     try {
-      const energyResponse = await fetch(EnergyAPI, {
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const energyJson = await energyResponse.json();
-      setAllData(energyJson.sums);
-      setAverageSystemLoad(energyJson.averageUsage);
-    } catch (error) {
-      console.error("Error fetching energy data:", error);
-    }
-  };
-
-  /**
-   * Fetch user profile data.
-   */
-  const fetchData3 = async () => {
-    try {
-      const response = await fetch(ProfileAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data);
-      } else {
-        console.error("Failed to fetch user data");
+      const data = await meterDataAPI.getHourlyData(drn);
+      if (data) {
+        setAllData(data.sums || data.data || []);
+        setAverageSystemLoad(data.averageUsage || 0);
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching hourly energy:", error);
     }
   };
 
-  /**
-   * Fetch current day energy data.
-   */
-  const fetchData4 = async () => {
+  const fetchUserData = async () => {
+    const saved = sessionStorage.getItem("user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setUserData({
+          UserID: parsed.UserID || "",
+          FirstName: parsed.FirstName || "",
+          LastName: parsed.LastName || "",
+          DRN: parsed.DRN || "",
+          Email: parsed.Email || "",
+          streetName: "",
+          cityName: "",
+          countryName: "",
+        });
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+  };
+
+  const fetchCurrentDayEnergy = async () => {
     try {
-      const response = await fetch(CurrentAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
+      const data = await energyDataAPI.getCurrentDay();
+      if (data) {
         setCurrentDayEnergy(data);
         setGrandTotal(data);
-      } else {
-        console.error("Failed to fetch current day energy data");
       }
     } catch (error) {
-      console.error("Error fetching current day energy data:", error);
+      console.error("Error fetching current day energy:", error);
     }
   };
 
-  /**
-   * Fetch monthly energy data.
-   */
-  const fetchData6 = async () => {
+  const fetchMonthlyEnergy = async () => {
     try {
-      const response = await fetch(MonthPowerAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setChartSeriesYearly({ Last: data.Last, Current: data.Current });
-      } else {
-        console.error("Failed to fetch monthly energy data");
+      const data = await energyDataAPI.getMonthlyYearly();
+      if (data) {
+        setChartSeriesYearly({ Last: data.Last || [], Current: data.Current || [] });
       }
     } catch (error) {
-      console.error("Error fetching monthly energy data:", error);
+      console.error("Error fetching monthly energy:", error);
     }
   };
 
-  /**
-   * Fetch energy percentage increase or decrease.
-   */
-  const fetchData8 = async () => {
+  const fetchWeeklyEnergy = async () => {
     try {
-      const response = await fetch(TimePeriodsPercentagePowerAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPercentageEnergy({
-          day: data.dayPercentage,
-          month: data.monthPercentage,
-          year: data.yearPercentage,
-        });
-      } else {
-        console.error("Failed to fetch energy percentage data");
-      }
-    } catch (error) {
-      console.error("Error fetching energy percentage data:", error);
-    }
-  };
-
-  /**
-   * Fetch energy data for different time periods.
-   */
-  const fetchData9 = async () => {
-    try {
-      const response = await fetch(TimePeriodsPowerAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setTimeperiodsEnergy({
-          day: data.day,
-          month: data.month,
-          year: data.year,
-        });
-      } else {
-        console.error("Failed to fetch energy data for different time periods");
-      }
-    } catch (error) {
-      console.error("Error fetching energy data for different time periods:", error);
-    }
-  };
-
-  /**
-   * Fetch weekly total energy data.
-   */
-  const fetchData7 = async () => {
-    try {
-      const response = await fetch(WeekPowerAPI, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
+      const data = await energyDataAPI.getWeekly();
+      if (data) {
         setChartSeriesWeekly({
-          lastweek: data.lastweek,
-          currentweek: data.currentweek,
+          lastweek: data.lastweek || [],
+          currentweek: data.currentweek || [],
         });
-      } else {
-        console.error("Failed to fetch weekly total energy data");
       }
     } catch (error) {
-      console.error("Error fetching weekly total energy data:", error);
+      console.error("Error fetching weekly energy:", error);
+    }
+  };
+
+  const fetchTimePeriods = async () => {
+    try {
+      const data = await energyDataAPI.getTimePeriods();
+      if (data) {
+        setTimeperiodsEnergy({
+          day: data.day || 0,
+          month: data.month || 0,
+          year: data.year || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching time periods:", error);
+    }
+  };
+
+  const fetchPercentageChange = async () => {
+    try {
+      const data = await energyDataAPI.getPowerIncreaseOrDecrease();
+      if (data) {
+        setPercentageEnergy({
+          day: data.dayPercentage || 0,
+          month: data.monthPercentage || 0,
+          year: data.yearPercentage || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching percentage data:", error);
     }
   };
 
   useEffect(() => {
     let isMounted = true;
     if (user) {
-      /**
-       * Fetch heater and meter states.
-       */
-      const fetchData5 = async () => {
+      const fetchLoadStates = async () => {
+        const drn = getDRN();
+        if (!drn) return;
         try {
-          const heaterResponse = await fetch(
-            `https://backend1.gridxmeter.com/get-heater-state`,
-            {
-              method: "GET",
-              headers: {
-                authorization: `${getAccessToken()}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const meterResponse = await fetch(
-            `https://backend1.gridxmeter.com/get-meter-state`,
-            {
-              method: "GET",
-              headers: {
-                authorization: `${getAccessToken()}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          const heaterState = await heaterResponse.json();
-          const meterState = await meterResponse.json();
-
+          const [heaterData, mainsData] = await Promise.allSettled([
+            meterDataAPI.getHeaterState(drn),
+            meterDataAPI.getMainsState(drn),
+          ]);
           if (isMounted) {
-            setLoadData((prevData) => ({
-              ...prevData,
-              geyser_state: heaterState,
-              mains_state: meterState,
-            }));
+            setLoadData({
+              geyser_state: heaterData.status === "fulfilled" ? heaterData.value : 0,
+              mains_state: mainsData.status === "fulfilled" ? mainsData.value : 0,
+            });
           }
         } catch (error) {
-          console.error("Fetch data error:", error);
+          console.error("Fetch load states error:", error);
         }
       };
-
-      fetchData5();
-
-      return () => {
-        isMounted = false; // Cleanup function to handle unmounting
-      };
+      fetchLoadStates();
+      return () => { isMounted = false; };
     }
-  }, [user]);
+  }, [user, userInfo]);
 
   useEffect(() => {
     if (user) {
-      fetchData();
-      fetchData2();
-      fetchData3();
-      fetchData4();
-      fetchData6();
-      fetchData7();
-      fetchData8();
-      fetchData9();
-
-      const intervalId = setInterval(() => {
-        fetchData();
-        fetchData2();
-        fetchData3();
-        fetchData4();
-        fetchData6();
-        fetchData7();
-        fetchData8();
-        fetchData9();
-      }, 600000);
-      return () => {
-        clearInterval(intervalId);
+      const fetchAll = () => {
+        fetchMeterPower();
+        fetchHourlyEnergy();
+        fetchUserData();
+        fetchCurrentDayEnergy();
+        fetchMonthlyEnergy();
+        fetchWeeklyEnergy();
+        fetchTimePeriods();
+        fetchPercentageChange();
       };
+      fetchAll();
+      const intervalId = setInterval(fetchAll, 600000);
+      return () => clearInterval(intervalId);
     }
-  }, [user]);
+  }, [user, userInfo]);
 
   const data = {
     unitsData,

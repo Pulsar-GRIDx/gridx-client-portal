@@ -15,17 +15,9 @@ import {
 } from "@mui/material";
 import { tokens } from "../../../../theme/theme";
 import SetNotifications from "../../../../components/setNotifications";
+import { meterControlAPI } from "../../../../services/api";
 
-/**
- * SendToken component allows users to send an STS token to a meter.
- * It handles token validation, displays a dialog for confirmation,
- * and sends the token via a POST request to the backend API.
- *
- * @memberof MeterTokenDashBoard.MeterTokenDashBoard_components
- * @component
- * @returns {JSX.Element} The rendered SendToken component.
- */
-const SendToken = () => {
+const SendToken = ({ drn }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -35,11 +27,6 @@ const SendToken = () => {
   const [errorText, setErrorText] = useState("");
   const [isTokenSent, setIsTokenSent] = useState(false);
 
-  /**
-   * Handles changes in the token input field.
-   *
-   * @param {Object} event - The event object containing the new value.
-   */
   const handleTokenChange = (event) => {
     const rawValue = event.target.value.replace(/\D/g, "");
     const formattedValue = rawValue
@@ -49,87 +36,52 @@ const SendToken = () => {
           .join("    ")
           .substr(0, 36)
       : "";
-
     setToken(formattedValue);
   };
 
-  /**
-   * Opens the confirmation dialog if the token is valid.
-   */
   const handleOpenDialog = () => {
     if (validateToken(token)) {
       setErrorText("");
       setOpenDialog(true);
     } else {
-      setErrorText("Invalid token. Please enter a 26-digit integer.");
+      setErrorText("Invalid token. Please enter a 20-digit integer.");
     }
   };
 
-  /**
-   * Closes the confirmation dialog.
-   */
   const handleCloseDialog = () => {
     setOpenDialog(false);
   };
 
-  /**
-   * Retrieves the access token from session storage.
-   *
-   * @returns {string} The access token.
-   */
-  const getAccessToken = () => {
-    const token = sessionStorage.getItem("Token");
-    return token;
-  };
-
-  /**
-   * Sends the validated token to the backend API.
-   */
   const handleSendToken = async () => {
-    if (validateToken(token)) {
-      setErrorText("");
-      setOpenDialog(false);
-      setLoading(true);
+    if (!validateToken(token)) {
+      setErrorText("Invalid token. Please enter a 20-digit integer.");
+      return;
+    }
+    if (!drn) {
+      setErrorText("No meter DRN found. Please log in again.");
+      return;
+    }
 
-      const apiUrl = `https://backend1.gridxmeter.com/update-token`;
-      const cleanedToken = token.replace(/\s/g, "");
+    setErrorText("");
+    setOpenDialog(false);
+    setLoading(true);
+    const cleanedToken = token.replace(/\s/g, "");
 
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            authorization: `${getAccessToken()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cleanedToken),
-        });
-
-        if (response.ok) {
-          setIsTokenSent(true);
-          SetNotifications("Units Added to the meter", "Recommended", "0");
-        } else {
-          console.error("Failed to send token");
-        }
-      } catch (error) {
-        console.error("Error sending token:", error);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setErrorText("Invalid token. Please enter a 26-digit integer.");
+    try {
+      await meterControlAPI.sendToken(drn, cleanedToken);
+      setIsTokenSent(true);
+      SetNotifications("Units Added to the meter", "Recommended", "0");
+    } catch (error) {
+      console.error("Error sending token:", error);
+      setErrorText("Failed to send token. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  /**
-   * Validates the token format.
-   *
-   * @param {string} value - The token value to validate.
-   * @returns {boolean} True if the token is valid, false otherwise.
-   */
   const validateToken = (value) => {
     const cleanedValue = value.replace(/\s/g, "");
-    const isValid = /^\d{20}$/.test(cleanedValue);
-    return isValid;
+    return /^\d{20}$/.test(cleanedValue);
   };
 
   return (

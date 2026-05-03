@@ -10,119 +10,73 @@ import {
 import { tokens } from "../../../../theme/theme";
 import PropTypes from "prop-types";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
+import { meterDataAPI, meterControlAPI } from "../../../../services/api";
 
-/**
- * DisplayCard component displays a card with a title, switch, and save button.
- * It allows toggling a state and saving the state using provided API endpoints.
- *
- * @memberof MeterTokenDashBoard.MeterTokenDashBoard_components
- * @component
- * @param {Object} props - The component props.
- * @param {string} props.Title - The title of the card.
- * @param {string} props.APIPost - The API endpoint for POST requests.
- * @param {string} props.APIGet - The API endpoint for GET requests.
- * @param {React.ElementType} props.Icon - The icon component to display.
- * @returns {JSX.Element} The rendered DisplayCard component.
- */
-const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
+const DisplayCard = ({ Title, drn, controlType, Icon }) => {
   const [open, setOpen] = useState(false);
   const [recall, setRecall] = useState(false);
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [state, setState] = useState("0"); // Assuming initial state is "0"
-  const Reason = "Meter User";
-  let colorState = "blue";
-  let colorStateBG = "blue";
+  const [state, setState] = useState("0");
+  const Reason = "Customer Portal";
 
-  // Dynamic theming using MUI theme tokens
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  colorState = state === "1" ? colors.green[600] : colors.red[500];
-  colorStateBG = state === "1" ? colors.greenT[600] : colors.redT[500];
+  let colorState = state === "1" ? colors.green[600] : colors.red[500];
+  let colorStateBG = state === "1" ? colors.greenT[600] : colors.redT[500];
 
-  // Function to retrieve access token from session storage
-  const getAccessToken = () => {
-    const token = sessionStorage.getItem("Token");
-    return token;
-  };
-
-  // Handler for switch toggle
   const handleChecked = () => {
-    const newState = !checked;
-    setChecked(newState);
+    setChecked(!checked);
   };
 
-  // Opens the confirmation dialog
   const handleClickOpen = () => {
     setOpen(true);
   };
 
-  // Closes the confirmation dialog
   const handleClose = () => {
     setOpen(false);
   };
 
-  // Confirms the action and performs the toggle
   const handleConfirm = () => {
-    console.log("Action confirmed.");
-    console.log("Action confirmed with state", checked);
     handleToggle();
     setOpen(false);
   };
 
-  // Fetches initial data from API on component mount
   const fetchData = async () => {
+    if (!drn) return;
     try {
-      const response = await fetch(APIGet, {
-        method: "GET",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await response.json();
+      const getFn = controlType === "heater"
+        ? meterDataAPI.getHeaterState
+        : meterDataAPI.getMainsState;
+      const data = await getFn(drn);
       setState(data);
-      setChecked(data === "1");
-      console.log(data);
+      setChecked(data === "1" || data === 1);
     } catch (error) {
       console.error("Meter state fetch error:", error);
     }
   };
 
-  // Fetch initial data on component mount
   useEffect(() => {
     fetchData();
-  }, [recall]);
+  }, [recall, drn]);
 
-  // Handles the toggle action and updates the server
   const handleToggle = async () => {
+    if (!drn) return;
     setLoading(true);
     const newState = checked ? 1 : 0;
-    const meterdata = {
-      state: newState,
-      reason: Reason,
-      processed: 0,
-    };
 
     try {
-      const response = await fetch(APIPost, {
-        method: "POST",
-        headers: {
-          authorization: `${getAccessToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(meterdata),
-      });
-
-      if (response.ok) {
-        setState(response.state);
-        setChecked(response.state === 1);
-      }
+      const setFn = controlType === "heater"
+        ? meterControlAPI.setHeaterControl
+        : meterControlAPI.setMainsControl;
+      await setFn(drn, newState, Reason);
+      setState(String(newState));
+      setChecked(newState === 1);
     } catch (error) {
-      console.error("Error sending token:", error);
+      console.error("Error toggling state:", error);
     } finally {
       setLoading(false);
-      setRecall(checked);
+      setRecall(!recall);
     }
   };
 
@@ -140,7 +94,6 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
         backgroundColor: colors.primaryT[400],
       }}
     >
-      {/* Icon and Title section */}
       <Box
         sx={{
           display: "flex",
@@ -150,7 +103,6 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
           width: "100%",
         }}
       >
-        {/* Rotated circle with icon */}
         <Box
           sx={{
             position: "absolute",
@@ -174,7 +126,7 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
               justifyContent: "center",
               width: "100%",
               height: "100%",
-              transform: "rotate(-45deg)", // Counter-rotate text
+              transform: "rotate(-45deg)",
             }}
           >
             <Icon
@@ -187,7 +139,6 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
             />
           </Box>
         </Box>
-        {/* Title and Switch */}
         <Box
           sx={{
             display: "flex",
@@ -200,7 +151,6 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
           <Box sx={{ textAlign: "right" }}>
             <Typography variant="h5">{Title}</Typography>
           </Box>
-          {/* Switch section */}
           <Box
             display="flex"
             alignItems="center"
@@ -210,19 +160,14 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
             <Typography variant="subtitle1">Off</Typography>
             <Switch
               checked={checked}
-              onChange={(e) => {
-                handleChecked();
-              }}
+              onChange={handleChecked}
               inputProps={{ "aria-label": "controlled" }}
-              sx={{
-                color: colorState,
-              }}
+              sx={{ color: colorState }}
             />
             <Typography variant="subtitle1">On</Typography>
           </Box>
         </Box>
       </Box>
-      {/* Save Button */}
       <Button
         variant="contained"
         color="primary"
@@ -231,7 +176,6 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
       >
         Save
       </Button>
-      {/* Confirmation Dialog */}
       <ConfirmDialog
         open={open}
         handleClose={handleClose}
@@ -242,21 +186,9 @@ const DisplayCard = ({ Title, APIPost, APIGet, Icon }) => {
 };
 
 DisplayCard.propTypes = {
-  /**
-   * The title of the card.
-   */
   Title: PropTypes.string.isRequired,
-  /**
-   * The API endpoint for POST requests.
-   */
-  APIPost: PropTypes.string.isRequired,
-  /**
-   * The API endpoint for GET requests.
-   */
-  APIGet: PropTypes.string.isRequired,
-  /**
-   * The icon component to display.
-   */
+  drn: PropTypes.string.isRequired,
+  controlType: PropTypes.oneOf(["mains", "heater"]).isRequired,
   Icon: PropTypes.elementType.isRequired,
 };
 

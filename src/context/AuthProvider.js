@@ -1,127 +1,99 @@
 import React, { useEffect, useState } from "react";
 import AuthContext from "./AuthContext";
-import axios from "axios";
+import { customerAuthAPI } from "../services/api";
 
-/**
- * @module Contexts
- */
-
-/**
- * AuthProvider component that wraps its children with AuthContext.Provider
- * to provide authentication state and functions.
- *
- * @component
- * @param {Object} props - The component props.
- * @param {React.ReactNode} props.children - The children components to be wrapped by the provider.
- * @returns {JSX.Element} The rendered component.
- */
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
   const [ApiErrMsg, setApiErrMsg] = useState(null);
 
-  /**
-   * Function to handle the login API call.
-   *
-   * @async
-   * @param {Object} data - The login data.
-   * @param {string} data.email - The user's email.
-   * @param {string} data.password - The user's password.
-   * @returns {Promise<void>}
-   */
   const apiCallLogin = async (data) => {
     try {
       setApiErrMsg(null);
-      const response = await axios.post(
-        "https://backend1.gridxmeter.com/signin",
-        data,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
-      const token = response.data.token;
+      const email = data.Email || data.email;
+      const password = data.Password || data.password;
+      const drn = data.DRN || data.drn;
+      const response = await customerAuthAPI.signin(email, password, drn);
+      const token = response.token;
+      const userData = response.user;
       setUser(token);
+      setUserInfo(userData);
       sessionStorage.setItem("Token", token);
-      if (user == null) {
-        setUser(token);
-      }
+      sessionStorage.setItem("user", JSON.stringify(userData));
     } catch (err) {
-      if (!err.response) {
+      if (err.message.includes("Failed to fetch")) {
         setApiErrMsg("No Server Response");
-      } else if (err.response.status === 400) {
-        setApiErrMsg("Missing email or Password");
-      } else if (err.response.status === 401) {
-        setApiErrMsg("Unauthorized");
+      } else if (err.message.includes("locked")) {
+        setApiErrMsg("Account locked. Try again in 15 minutes.");
+      } else if (err.message.includes("not found")) {
+        setApiErrMsg("Email not found");
+      } else if (err.message.includes("Invalid") || err.message.includes("password")) {
+        setApiErrMsg("Invalid email or password");
       } else {
-        setApiErrMsg("Login Failed");
+        setApiErrMsg(err.message || "Login Failed");
       }
     }
   };
 
-  /**
-   * Function to handle the registration API call.
-   *
-   * @async
-   * @param {Object} data - The registration data.
-   * @param {string} data.email - The user's email.
-   * @param {string} data.password - The user's password.
-   * @returns {Promise<void>}
-   */
   const apiCallRegister = async (data) => {
     try {
       setApiErrMsg(null);
-      const response = await axios.post(
-        "https://backend1.gridxmeter.com/signup",
-        data,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
-
-      const token = response.data.token;
+      const response = await customerAuthAPI.signup({
+        Email: data.Email || data.email,
+        Password: data.Password || data.pwd || data.password,
+        FirstName: data.FirstName || data.name || data.firstName,
+        LastName: data.LastName || data.surname || data.lastName,
+        DRN: data.DRN || data.drn,
+        Phone: data.Phone || data.phone || undefined,
+      });
+      const token = response.token;
+      const userData = response.user;
       setUser(token);
-      console.log("this is the user context", user);
+      setUserInfo(userData);
       sessionStorage.setItem("Token", token);
+      sessionStorage.setItem("user", JSON.stringify(userData));
     } catch (err) {
-      if (!err?.response) {
+      if (err.message.includes("Failed to fetch")) {
         setApiErrMsg("No Server Response");
-      } else if (err.response?.status === 409) {
+      } else if (err.message.includes("already") || err.message.includes("409")) {
         setApiErrMsg("Account already registered");
+      } else if (err.message.includes("not found") || err.message.includes("meter")) {
+        setApiErrMsg("Meter number (DRN) not found in system");
       } else {
-        setApiErrMsg("Registration Failed");
+        setApiErrMsg(err.message || "Registration Failed");
       }
     }
   };
 
-  /**
-   * Function to set the user from the session storage.
-   */
   const handeSetUser = () => {
     const token = sessionStorage.getItem("Token");
-    if (token !== null && token !== undefined) {
+    const savedUser = sessionStorage.getItem("user");
+    if (token) {
       setUser(token);
+      if (savedUser) {
+        try {
+          setUserInfo(JSON.parse(savedUser));
+        } catch (e) {
+          // ignore parse error
+        }
+      }
     }
   };
 
-  /**
-   * Function to handle user logout.
-   */
   const HandleLogOut = () => {
     setUser(null);
+    setUserInfo(null);
     sessionStorage.removeItem("Token");
+    sessionStorage.removeItem("user");
   };
 
-  /**
-   * useEffect hook to set the user from session storage on component mount.
-   */
   useEffect(() => {
     handeSetUser();
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, apiCallLogin, apiCallRegister, ApiErrMsg, HandleLogOut }}
+      value={{ user, userInfo, apiCallLogin, apiCallRegister, ApiErrMsg, HandleLogOut }}
     >
       {children}
     </AuthContext.Provider>
