@@ -16,10 +16,10 @@ const AuthProvider = ({ children }) => {
       const response = await customerAuthAPI.signin(email, password, drn);
       const token = response.token;
       const userData = response.user;
-      setUser(token);
-      setUserInfo(userData);
       sessionStorage.setItem("Token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
+      window.location.reload();
+      return;
     } catch (err) {
       if (err.message.includes("Failed to fetch")) {
         setApiErrMsg("No Server Response");
@@ -48,10 +48,10 @@ const AuthProvider = ({ children }) => {
       });
       const token = response.token;
       const userData = response.user;
-      setUser(token);
-      setUserInfo(userData);
       sessionStorage.setItem("Token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
+      window.location.reload();
+      return;
     } catch (err) {
       if (err.message.includes("Failed to fetch")) {
         setApiErrMsg("No Server Response");
