@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+  pre_build:
+    commands:
+      - echo Installing source NPM dependencies...
+      - npm install
+  build:
+    commands:
+      - echo Build started on 'date'
+      - npm run build
+  post_build:
+    commands:
+      - aws s3 cp --recursive ./build s3://gridxmeter.com/
+      - aws s3 cp --cache-control="max-age=0, no-cache, no-store, must-revalidate" ./build/index.html s3://gridxmeter.com/
+
+artifacts:
+  files:
+    - "build/*"
+    - "build/**/*"
