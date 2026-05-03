@@ -3,27 +3,19 @@ import MainRoutes from "./routes/MainRoutes";
 import { ColorModeContext, useMode } from "./theme/theme";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import AuthContext from "./context/AuthContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 
 function App() {
   const [theme, toggleColorMode] = useMode();
   const { user } = useContext(AuthContext);
-  const [authorised, setAuthorised] = useState(false);
+  const timeoutRef = useRef(null);
+
+  const isAuthorised = !!user && !!sessionStorage.getItem("Token");
 
   useEffect(() => {
-    if (user) {
-      const token = sessionStorage.getItem("Token");
-      if (token && user) setAuthorised(true);
-    } else {
-      setAuthorised(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    let inactivityTimeout;
     const resetTimeout = () => {
-      clearTimeout(inactivityTimeout);
-      inactivityTimeout = setTimeout(() => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
         sessionStorage.removeItem("Token");
         sessionStorage.removeItem("user");
         window.location.reload();
@@ -33,7 +25,7 @@ function App() {
     document.addEventListener("keypress", resetTimeout);
     resetTimeout();
     return () => {
-      clearTimeout(inactivityTimeout);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       document.removeEventListener("mousemove", resetTimeout);
       document.removeEventListener("keypress", resetTimeout);
     };
@@ -43,7 +35,7 @@ function App() {
     <ColorModeContext.Provider value={toggleColorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {authorised ? <MainRoutes /> : <AuthRoutes />}
+        {isAuthorised ? <MainRoutes /> : <AuthRoutes />}
       </ThemeProvider>
     </ColorModeContext.Provider>
   );
