@@ -30,6 +30,8 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          CI: false
 
       - name: Add 404.html for SPA routing
         run: cp build/index.html build/404.html
