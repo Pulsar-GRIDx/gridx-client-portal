@@ -1,82 +1,48 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
+import { Box, CssBaseline } from "@mui/material";
 import Topbar from "../scenes/Main/global/TopBar";
 import Sidebar from "../scenes/Main/global/SideBar";
-import { Box } from "@mui/material";
-import CssBaseline from "@mui/material/CssBaseline";
 import Dashboard from "../scenes/Main/dashboard/DashBoard";
 import Metertokendash from "../scenes/Main/newtoken/metertokendash";
 import ProfileDash from "../scenes/Main/profile/profiledash";
-import WifiSettingsDash from "../scenes/Main/wifisettings/wifiSettingsDash";
+import GeyserControl from "../scenes/Main/geyser/GeyserControl";
+import Recharge from "../scenes/Main/recharge/Recharge";
+import Statistics from "../scenes/Main/statistics/Statistics";
+import NetMetering from "../scenes/Main/netmetering/NetMetering";
+import Settings from "../scenes/Main/settings/Settings";
 import NotFound from "./NotFound";
 import DataProvider from "../scenes/Main/Data/getData";
 import NotificationDataProvider from "../scenes/Main/Data/getNotificationsData";
-import AnalysisDash from "../scenes/Main/analysis/AnalysisDash";
 
-/**
- * @module Routes
- */
+const drawerWidth = 260;
 
-/**
- * MainRoutes component sets up the primary routes and layout for the application.
- * It includes the sidebar, topbar, and the main content area which changes based on the route.
- *
- * @component
- * @returns {JSX.Element} The rendered component.
- */
 const MainRoutes = () => {
-  /**
-   * Ref for storing the window width.
-   * @type {React.MutableRefObject<number>}
-   */
-  const windowWidth = useRef(window.innerWidth);
-  const adjustedWidth = windowWidth.current - 240;
-
-  /**
-   * Ref for storing the window height.
-   * @type {React.MutableRefObject<number>}
-   */
-  const windowHeight = useRef(window.innerHeight);
-  const adjustedHeight = windowHeight.current - 60;
-
-  /**
-   * State for managing the mobile drawer's open status.
-   * @type {[boolean, Function]}
-   */
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  /**
-   * Toggles the state of the mobile drawer.
-   */
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   return (
     <DataProvider>
       <CssBaseline />
       <NotificationDataProvider>
-        <Box sx={{ display: "flex" }}>
-          <Sidebar
-            mobileOpen={mobileOpen}
-            handleDrawerToggle={handleDrawerToggle}
-          />
-          <Box
-            sx={{
-              flexGrow: 1,
-              height: "100vh",
-              overflowY: "hidden",
-              p: 3,
-            }}
-          >
+        <Box sx={{ display: "flex", minHeight: "100vh" }}>
+          <Sidebar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
+          <Box sx={{
+            flexGrow: 1,
+            width: { sm: `calc(100% - ${drawerWidth}px)` },
+            minHeight: "100vh",
+          }}>
             <Topbar handleDrawerToggle={handleDrawerToggle} />
-            <Box sx={{ p: 3, mt: 3 }}>
+            <Box sx={{ pt: 8, px: { xs: 2, sm: 3 }, pb: 2 }}>
               <Routes>
-                <Route path="/" exact element={<Dashboard />} />
-                <Route path="/meter" exact element={<Metertokendash />} />
-                <Route path="/profile" exact element={<ProfileDash />} />
-                <Route path="/wifi" exact element={<WifiSettingsDash />} />
-                <Route path="/analysis" exact element={<AnalysisDash />} />
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/meter" element={<Metertokendash />} />
+                <Route path="/geyser" element={<GeyserControl />} />
+                <Route path="/recharge" element={<Recharge />} />
+                <Route path="/statistics" element={<Statistics />} />
+                <Route path="/net-metering" element={<NetMetering />} />
+                <Route path="/profile" element={<ProfileDash />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>

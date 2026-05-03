@@ -1,321 +1,267 @@
-import React from "react";
-import * as Components from "../../../../components/LoginStyles";
-import "./styles.css";
-import { tokens } from "../../../../theme/theme";
-import { useTheme } from "@mui/material";
-import { useRef, useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import {
+  Box, Typography, TextField, Button, IconButton, InputAdornment,
+  CircularProgress, Alert, Link,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import AuthContext from "../../../../context/AuthContext";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from '@mui/material/IconButton';
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
+import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 
-// Regular expressions for validation
-const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DRN_REGEX = /^0260\d{12}$/;
-const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
 
-/**
- * @module Login_PC
- */
-
-/**
- * LoginDesktop component handles both sign-in and sign-up functionalities.
- * It integrates with AuthContext for authentication and displays different forms based on user interaction.
- */
 function LoginDesktop() {
-  const theme = useTheme();
-  const [errMsg, setErrMsg] = useState(""); // Error message state for displaying validation errors
-  const [signIn, toggle] = React.useState(true); // State to toggle between sign-in and sign-up forms
-  const { apiCallLogin, apiCallRegister, ApiErrMsg } = useContext(AuthContext); // Authentication context for API calls and error messages
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-  const [errors, setErrors] = useState({}); // State to hold validation errors
+  const navigate = useNavigate();
+  const { apiCallLogin, apiCallRegister, ApiErrMsg } = useContext(AuthContext);
 
-  // Refs for input fields
-  const errRef = useRef();
-  const nameRef = useRef();
-  const surnameRef = useRef();
-  const emailRef = useRef();
-  const DRNRef = useRef();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState("");
 
-  // States for form inputs and their validation
-  const [name, setname] = useState("");
-  const [validName, setValidName] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [drn, setDrn] = useState("");
 
-  const [surname, setsurname] = useState("");
-  const [validSurname, setValidSurname] = useState(false);
+  useEffect(() => { setLocalError(""); }, [email, password]);
 
-  const [email, setemail] = useState("");
-  const [validEmail, setValidEmail] = useState(false);
-
-  const [DRN, setDRN] = useState("");
-  const [validDRN, setValidDRN] = useState(false);
-
-  const [pwd, setPwd] = useState("");
-  const [validPwd, setValidPwd] = useState(false);
-
-  const [matchPwd, setMatchPwd] = useState("");
-  const [validMatch, setValidMatch] = useState(false);
-
-  // Effect to validate form inputs on change
-  useEffect(() => {
-    setValidName(USER_REGEX.test(name));
-    setValidSurname(USER_REGEX.test(surname));
-    setValidEmail(EMAIL_REGEX.test(email));
-    setValidDRN(DRN_REGEX.test(DRN));
-  }, [name, surname, email, DRN]);
-
-  /**
-   * Handles form submission for user registration.
-   * Validates input fields and calls API for registration if inputs are valid.
-   * Displays error messages if any validation fails.
-   * @param {Event} e - Form submit event
-   */
-  const handleSubmitRegister = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    // Validate inputs
-    const v1 = USER_REGEX.test(name);
-    const v2 = USER_REGEX.test(surname);
-    const v3 = EMAIL_REGEX.test(email);
-    const v4 = DRN_REGEX.test(DRN);
-    const v5 = PWD_REGEX.test(pwd);
-
-    const newErrors = {};
-
-    if (!v1) newErrors.name = "Invalid Name.";
-    if (!v2) newErrors.surname = "Invalid Surname.";
-    if (!v3) newErrors.email = "Invalid Email.";
-    if (!v4) newErrors.DRN = "Invalid DRN.";
-    if (!v5) newErrors.pwd = "Invalid Password.";
-    if (pwd !== matchPwd) newErrors.match = "Passwords do not match.";
-
-    // Set errors and display error message if validation fails
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setErrMsg(Object.values(newErrors).join(" "));
-      return;
-    }
-
-    setErrMsg(null);
-    setErrors({});
-
-    // Call API for registration
-    await apiCallRegister({
-      FirstName: name,
-      LastName: surname,
-      Email: email,
-      DRN: DRN,
-      Password: pwd,
-    });
-
-    // Display API error message if registration fails
-    if (ApiErrMsg !== null) {
-      setErrMsg(ApiErrMsg);
-    }
+    if (!email || !password) { setLocalError("Please fill in all fields"); return; }
+    setLoading(true);
+    setLocalError("");
+    await apiCallLogin({ Email: email, Password: password, DRN: drn || undefined });
+    setLoading(false);
   };
 
-  // Effect to clear error message on email or password change
-  useEffect(() => {
-    setErrMsg("");
-  }, [email, pwd]);
-
-  /**
-   * Handles form submission for user login.
-   * Calls API for login and displays error message if login fails.
-   * @param {Event} e - Form submit event
-   */
-  const handleSubmitLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-
-    setErrMsg(null);
-    await apiCallLogin({ Email: email, Password: pwd });
-
-    // Display API error message if login fails
-    if (ApiErrMsg !== null) {
-      setErrMsg(ApiErrMsg);
+    if (!firstName || !lastName || !email || !drn || !password) {
+      setLocalError("Please fill in all required fields"); return;
     }
+    if (!EMAIL_REGEX.test(email)) { setLocalError("Invalid email address"); return; }
+    if (!DRN_REGEX.test(drn)) { setLocalError("DRN must start with 0260 followed by 12 digits"); return; }
+    if (password.length < 6) { setLocalError("Password must be at least 6 characters"); return; }
+    if (password !== confirmPwd) { setLocalError("Passwords do not match"); return; }
+    setLoading(true);
+    setLocalError("");
+    await apiCallRegister({ FirstName: firstName, LastName: lastName, Email: email, DRN: drn, Password: password });
+    setLoading(false);
   };
 
-  /**
-   * Toggles password visibility.
-   */
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+  const errMsg = localError || ApiErrMsg;
 
-  /**
-   * Prevents default behavior for mouse down event on password field.
-   * @param {Event} event - Mouse down event
-   */
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
+  const inputSx = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 2, bgcolor: "rgba(255,255,255,0.06)",
+      "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
+      "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
+      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+    },
+    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
+    "& .MuiOutlinedInput-input": { color: "#e2e8f0" },
   };
 
   return (
-    <Components.Container>
-      {/* Sign Up Form */}
-      <Components.SignUpContainer signingIn={signIn}>
-        <Components.Form>
-          {/* Error Message */}
-          <p
-            ref={errRef}
-            className={errMsg ? "errmsg" : "offscreen"}
-            aria-live="assertive"
-          >
-            {errMsg}
-          </p>
-          <Components.Title>Create Account</Components.Title>
-          {/* Name Input */}
-          <Components.Input
-            type="text"
-            placeholder="Name"
-            id="name"
-            ref={nameRef}
-            autoComplete="off"
-            onChange={(e) => setname(e.target.value)}
-            value={name}
-            required
-            aria-invalid={validName ? "false" : "true"}
-          />
-          {/* Surname Input */}
-          <Components.Input
-            type="text"
-            placeholder="Surname"
-            id="surname"
-            ref={surnameRef}
-            autoComplete="off"
-            onChange={(e) => setsurname(e.target.value)}
-            value={surname}
-            required
-            aria-invalid={validSurname ? "false" : "true"}
-          />
-          {/* Email Input */}
-          <Components.Input
-            type="email"
-            placeholder="Email"
-            id="email"
-            ref={emailRef}
-            autoComplete="off"
-            onChange={(e) => setemail(e.target.value)}
-            value={email}
-            required
-            aria-invalid={validEmail ? "false" : "true"}
-          />
-          {/* DRN Input */}
-          <Components.Input
-            placeholder="Meter DRN"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            id="DRN"
-            ref={DRNRef}
-            autoComplete="off"
-            onChange={(e) => setDRN(e.target.value)}
-            value={DRN}
-            required
-            aria-invalid={validDRN ? "false" : "true"}
-          />
-          {/* Password Input */}
-          <Components.Input
-            type="password"
-            placeholder="Password"
-            id="password"
-            onChange={(e) => setPwd(e.target.value)}
-            value={pwd}
-            required
-            aria-invalid={validPwd ? "false" : "true"}
-          />
-          {/* Confirm Password Input */}
-          <Components.Input
-            type="password"
-            placeholder="Confirm Password"
-            id="confirm_pwd"
-            onChange={(e) => setMatchPwd(e.target.value)}
-            value={matchPwd}
-            required
-            aria-invalid={validMatch ? "false" : "true"}
-          />
-          {/* Sign Up Button */}
-          <Components.Button onClick={handleSubmitRegister}>
-            Sign Up
-          </Components.Button>
-        </Components.Form>
-      </Components.SignUpContainer>
-      {/* Sign In Form */}
-      <Components.SignInContainer signingIn={signIn}>
-        <Components.Form>
-          {/* Error Message */}
-          <p
-            ref={errRef}
-            className={errMsg ? "errmsg" : "offscreen"}
-            aria-live="assertive"
-          >
-            {errMsg}
-          </p>
-          <Components.Title>Sign in</Components.Title>
-          {/* Email Input */}
-          <Components.Input
-            type="email"
-            placeholder="Email"
-            autoComplete="off"
-            onChange={(e) => setemail(e.target.value)}
-            value={email}
-            required
-          />
-          {/* Password Input */}
-          <Components.InputContainer>
-            <Components.InputPassword
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              id="password"
-              onChange={(e) => setPwd(e.target.value)}
-              value={pwd}
-              required
+    <Box sx={{
+      minHeight: "100vh", display: "flex",
+      background: "linear-gradient(135deg, #0c1222 0%, #1a2744 50%, #0f172a 100%)",
+    }}>
+      <Box sx={{
+        display: { xs: "none", md: "flex" },
+        flex: 1, alignItems: "center", justifyContent: "center",
+        background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.05))",
+        position: "relative", overflow: "hidden",
+      }}>
+        <Box sx={{
+          position: "absolute", width: 400, height: 400, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)",
+          top: "20%", left: "30%",
+        }} />
+        <Box sx={{
+          position: "absolute", width: 300, height: 300, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)",
+          bottom: "20%", right: "20%",
+        }} />
+        <Box sx={{ textAlign: "center", zIndex: 1, px: 6 }}>
+          <Box sx={{
+            width: 72, height: 72, borderRadius: 3, mx: "auto", mb: 3,
+            background: "linear-gradient(135deg, #3b82f6, #10b981)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 20px 40px rgba(59,130,246,0.3)",
+          }}>
+            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 40 }} />
+          </Box>
+          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f1f5f9", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif" }}>
+            GRIDx Portal
+          </Typography>
+          <Typography sx={{ fontSize: 16, color: "#94a3b8", maxWidth: 380, mx: "auto", lineHeight: 1.6 }}>
+            Smart energy management at your fingertips. Monitor, control, and optimize your electricity usage.
+          </Typography>
+          <Box sx={{ mt: 5, display: "flex", justifyContent: "center", gap: 4 }}>
+            {[
+              { val: "24/7", label: "Monitoring" },
+              { val: "Real-time", label: "Data" },
+              { val: "Smart", label: "Control" },
+            ].map((item, i) => (
+              <Box key={i} sx={{ textAlign: "center" }}>
+                <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#60a5fa" }}>{item.val}</Typography>
+                <Typography sx={{ fontSize: 12, color: "#64748b" }}>{item.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+
+      <Box sx={{
+        width: { xs: "100%", md: 480 }, display: "flex", alignItems: "center",
+        justifyContent: "center", px: { xs: 3, sm: 5 },
+      }}>
+        <Box sx={{ width: "100%", maxWidth: 400 }}>
+          <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4, justifyContent: "center" }}>
+            <Box sx={{
+              width: 40, height: 40, borderRadius: 2,
+              background: "linear-gradient(135deg, #3b82f6, #10b981)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <BoltRoundedIcon sx={{ color: "#fff", fontSize: 24 }} />
+            </Box>
+            <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9" }}>GRIDx</Typography>
+          </Box>
+
+          <Typography sx={{ fontSize: 26, fontWeight: 700, color: "#f1f5f9", mb: 0.5 }}>
+            {isSignUp ? "Create Account" : "Welcome back"}
+          </Typography>
+          <Typography sx={{ fontSize: 14, color: "#64748b", mb: 3 }}>
+            {isSignUp ? "Register to access your meter dashboard" : "Sign in to your GRIDx account"}
+          </Typography>
+
+          {errMsg && (
+            <Alert severity="error" sx={{
+              mb: 2, borderRadius: 2,
+              bgcolor: "rgba(239,68,68,0.1)", color: "#fca5a5",
+              "& .MuiAlert-icon": { color: "#ef4444" },
+              border: "1px solid rgba(239,68,68,0.2)",
+            }}>
+              {errMsg}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={isSignUp ? handleRegister : handleLogin} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {isSignUp && (
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <TextField
+                  fullWidth label="First Name" size="small"
+                  value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                  sx={inputSx} required
+                />
+                <TextField
+                  fullWidth label="Last Name" size="small"
+                  value={lastName} onChange={(e) => setLastName(e.target.value)}
+                  sx={inputSx} required
+                />
+              </Box>
+            )}
+            <TextField
+              fullWidth label="Email" type="email" size="small"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              sx={inputSx} required autoComplete="email"
             />
-            {/* Toggle Password Visibility */}
-            <InputAdornment position="end" style={{ position: "absolute", right: 10 }}>
-              <IconButton
-                aria-label="toggle password visibility"
-                onClick={handleClickShowPassword}
-                onMouseDown={handleMouseDownPassword}
-                edge="end"
-              >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          </Components.InputContainer>
-          {/* Sign In Button */}
-          <Components.Button onClick={handleSubmitLogin}>
-            Sign In
-          </Components.Button>
-        </Components.Form>
-      </Components.SignInContainer>
-      {/* Overlay for switching between sign-in and sign-up */}
-      <Components.OverlayContainer signingIn={signIn}>
-        <Components.Overlay signingIn={signIn}>
-          <Components.LeftOverlayPanel signingIn={signIn}>
-            <Components.Title>Welcome Back!</Components.Title>
-            <Components.Paragraph>
-              To keep connected with us please login with your personal info
-            </Components.Paragraph>
-            <Components.GhostButton onClick={() => toggle(true)}>
-              Sign In
-            </Components.GhostButton>
-          </Components.LeftOverlayPanel>
-          <Components.RightOverlayPanel signingIn={signIn}>
-            <Components.Title>Hello, Friend!</Components.Title>
-            <Components.Paragraph>
-              Enter your personal details and start your journey with us
-            </Components.Paragraph>
-            <Components.GhostButton onClick={() => toggle(false)}>
-              Sign Up
-            </Components.GhostButton>
-          </Components.RightOverlayPanel>
-        </Components.Overlay>
-      </Components.OverlayContainer>
-    </Components.Container>
+            {(isSignUp || drn) && (
+              <TextField
+                fullWidth label={isSignUp ? "Meter DRN" : "DRN (Optional)"} size="small"
+                value={drn} onChange={(e) => setDrn(e.target.value)}
+                placeholder="0260XXXXXXXXXXXX"
+                sx={inputSx} required={isSignUp}
+                inputProps={{ inputMode: "numeric" }}
+              />
+            )}
+            {!isSignUp && !drn && (
+              <Box sx={{ textAlign: "right", mt: -1 }}>
+                <Link
+                  component="button" type="button"
+                  onClick={() => setDrn(" ")}
+                  sx={{ fontSize: 12, color: "#64748b", textDecoration: "none", "&:hover": { color: "#94a3b8" } }}
+                >
+                  Login with DRN
+                </Link>
+              </Box>
+            )}
+            <TextField
+              fullWidth label="Password" size="small"
+              type={showPassword ? "text" : "password"}
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              sx={inputSx} required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: "rgba(255,255,255,0.4)" }}>
+                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {isSignUp && (
+              <TextField
+                fullWidth label="Confirm Password" size="small"
+                type="password" value={confirmPwd}
+                onChange={(e) => setConfirmPwd(e.target.value)}
+                sx={inputSx} required
+              />
+            )}
+
+            {!isSignUp && (
+              <Box sx={{ textAlign: "right", mt: -0.5 }}>
+                <Link
+                  component="button" type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  sx={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", "&:hover": { color: "#93c5fd" } }}
+                >
+                  Forgot password?
+                </Link>
+              </Box>
+            )}
+
+            <Button
+              type="submit" fullWidth variant="contained" size="large"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isSignUp ? <PersonAddRoundedIcon /> : <LoginRoundedIcon />)}
+              sx={{
+                mt: 1, borderRadius: 2, py: 1.3, fontWeight: 600, fontSize: 15,
+                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                boxShadow: "0 8px 25px rgba(59,130,246,0.3)",
+                "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 12px 30px rgba(59,130,246,0.4)" },
+              }}
+            >
+              {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
+            </Button>
+          </Box>
+
+          <Typography sx={{ textAlign: "center", mt: 3, fontSize: 13, color: "#64748b" }}>
+            {isSignUp ? "Already have an account? " : "Don't have an account? "}
+            <Link
+              component="button"
+              onClick={() => { setIsSignUp(!isSignUp); setLocalError(""); }}
+              sx={{ color: "#60a5fa", fontWeight: 600, textDecoration: "none", "&:hover": { color: "#93c5fd" } }}
+            >
+              {isSignUp ? "Sign In" : "Sign Up"}
+            </Link>
+          </Typography>
+
+          <Typography sx={{ textAlign: "center", mt: 4, fontSize: 11, color: "#334155" }}>
+            Powered by Pulsar Namibia
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
