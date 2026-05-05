@@ -28,6 +28,7 @@ async function request(url, options = {}) {
 function get(url) { return request(url); }
 function post(url, body) { return request(url, { method: "POST", body: JSON.stringify(body) }); }
 function put(url, body) { return request(url, { method: "PUT", body: JSON.stringify(body) }); }
+function del(url) { return request(url, { method: "DELETE" }); }
 
 export const customerAuthAPI = {
   signin: (Email, Password, DRN) => post("/customer/signin", { Email, Password, DRN }),
@@ -91,6 +92,17 @@ export const vendingAPI = {
   },
 };
 
+export const geyserAPI = {
+  getConfig: (drn) => get(`/geyser/config/${drn}`),
+  getStatus: (drn) => get(`/geyser/status/${drn}`),
+  control: (drn, state) => post(`/geyser/control/${drn}`, { state }),
+  setTimer: (drn, hours, minutes, action) => post(`/geyser/timer/${drn}`, { hours, minutes, action }),
+  getSchedules: (drn) => get(`/geyser/schedules/${drn}`),
+  createSchedule: (drn, schedule) => post(`/geyser/schedules/${drn}`, schedule),
+  deleteSchedule: (drn, id) => del(`/geyser/schedules/${drn}/${id}`),
+  updateMode: (drn, mode) => put(`/geyser/config/${drn}`, { mode }),
+};
+
 export const netMeteringAPI = {
   getLatest: (drn) => get(`/mqtt/net-energy/${drn}`),
   getSummary: (drn) => get(`/mqtt/net-energy/${drn}/summary`),
@@ -108,4 +120,4 @@ export const meterHealthAPI = {
   getHistory: (drn, limit = 72) => get(`/mqtt/meter-health/${drn}/history?limit=${limit}`),
 };
 
-export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, netMetering: netMeteringAPI, mqtt: mqttAPI, health: meterHealthAPI, API_BASE };
+export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, mqtt: mqttAPI, health: meterHealthAPI, API_BASE };

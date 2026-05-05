@@ -15,6 +15,8 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import SignalCellularAltRoundedIcon from "@mui/icons-material/SignalCellularAltRounded";
+import ElectricMeterRoundedIcon from "@mui/icons-material/ElectricMeterRounded";
 import Chart from "react-apexcharts";
 
 function StatCard({ title, value, unit, icon, color, subtitle, isDark }) {
@@ -57,7 +59,7 @@ function StatCard({ title, value, unit, icon, color, subtitle, isDark }) {
   );
 }
 
-function EnergyBar({ value, max = 100, isDark }) {
+function EnergyBar({ value, max = 5000, isDark }) {
   const pct = Math.min((value / max) * 100, 100);
   const getColor = (p) => {
     if (p <= 20) return "#ef4444";
@@ -86,7 +88,7 @@ function EnergyBar({ value, max = 100, isDark }) {
 function Dashboard() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const { unitsData, averageUnitsData, loadData, powerData, hourlyData } = useData();
+  const { unitsData, averageUnitsData, loadData, powerData, hourlyData, signalStrengthData } = useData();
   const { userInfo } = useContext(AuthContext);
   const drn = userInfo?.DRN || JSON.parse(sessionStorage.getItem("user") || "{}")?.DRN || "";
 
@@ -104,22 +106,26 @@ function Dashboard() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+    window.location.reload();
   };
 
   const fmt = (v, d = 1) => { const n = parseFloat(v); return isNaN(n) ? "---" : n.toFixed(d); };
   const voltage = fmt(powerData?.voltage || powerData?.Voltage);
   const current = fmt(powerData?.current || powerData?.Current, 2);
-  const power = fmt(powerData?.power || powerData?.Power);
+  const power = fmt(powerData?.power || powerData?.active_energy || powerData?.Power);
   const frequency = fmt(powerData?.frequency || powerData?.Frequency, 2);
 
-  const mainsState = loadData?.mains_state === "1" || loadData?.mains_state === 1;
-  const geyserState = loadData?.geyser_state === "1" || loadData?.geyser_state === 1;
+  const mainsState = String(loadData?.mains_state) === "1";
+  const geyserState = String(loadData?.geyser_state) === "1";
+
+  const todayUsage = Array.isArray(hourlyData)
+    ? hourlyData.reduce((sum, h) => sum + (parseFloat(h.kWh) || 0), 0).toFixed(2)
+    : (averageUnitsData || "0");
 
   const chartData = Array.isArray(hourlyData)
-    ? hourlyData.slice(-12).map(d => ({
-        x: d.hour || d.Hour || d.time || "",
-        y: parseFloat(d.energy || d.Energy || d.value || 0),
+    ? hourlyData.filter(d => (parseFloat(d.kWh) || 0) > 0).map(d => ({
+        x: d.hour || d.Hour || "",
+        y: parseFloat(d.kWh || d.energy || d.Energy || 0),
       }))
     : [];
 
@@ -133,9 +139,14 @@ function Dashboard() {
       labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
       axisBorder: { show: false }, axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } } },
+    yaxis: {
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        formatter: (v) => v.toFixed(2),
+      },
+    },
     grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-    tooltip: { theme: isDark ? "dark" : "light" },
+    tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
     dataLabels: { enabled: false },
   };
 
@@ -163,6 +174,18 @@ function Dashboard() {
               "& .MuiChip-icon": { color: "inherit" },
             }}
           />
+          <Chip
+            icon={<WaterDropRoundedIcon />}
+            label={geyserState ? "Heater ON" : "Heater OFF"}
+            size="small"
+            sx={{
+              fontWeight: 600, fontSize: 12,
+              bgcolor: geyserState ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+              color: geyserState ? "#22c55e" : "#ef4444",
+              border: `1px solid ${geyserState ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+              "& .MuiChip-icon": { color: "inherit" },
+            }}
+          />
           <Tooltip title="Refresh">
             <IconButton size="small" onClick={handleRefresh} sx={{ color: isDark ? "#94a3b8" : "#64748b" }}>
               <RefreshRoundedIcon fontSize="small" sx={{ animation: refreshing ? "spin 1s linear infinite" : "none", "@keyframes spin": { "100%": { transform: "rotate(360deg)" } } }} />
@@ -173,22 +196,16 @@ function Dashboard() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={6} md={3}>
-          <StatCard title="Energy Balance" value={unitsData || "0"} unit="kWh" icon={<BoltRoundedIcon />} color="#3b82f6" isDark={isDark} />
+          <StatCard title="Meter Units" value={unitsData || "0"} unit="kWh" icon={<ElectricMeterRoundedIcon />} color="#3b82f6" isDark={isDark} />
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
-          <StatCard title="Daily Usage" value={Math.round(averageUnitsData || 0)} unit="kWh" icon={<TrendingUpRoundedIcon />} color="#f97316" isDark={isDark} />
+          <StatCard title="Today's Usage" value={todayUsage} unit="kWh" icon={<TrendingUpRoundedIcon />} color="#f97316" isDark={isDark} />
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
           <StatCard title="Current Power" value={power} unit="W" icon={<BatteryChargingFullRoundedIcon />} color="#10b981" isDark={isDark} />
         </Grid>
         <Grid item xs={6} sm={6} md={3}>
-          <StatCard
-            title="Geyser"
-            value={geyserState ? "ON" : "OFF"}
-            icon={<WaterDropRoundedIcon />}
-            color={geyserState ? "#22c55e" : "#ef4444"}
-            isDark={isDark}
-          />
+          <StatCard title="Voltage" value={voltage} unit="V" icon={<BoltRoundedIcon />} color="#8b5cf6" isDark={isDark} />
         </Grid>
       </Grid>
 
@@ -200,13 +217,13 @@ function Dashboard() {
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
           }}>
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Energy Consumption (Last 12 Hours)
+              Energy Consumption (Today)
             </Typography>
             {chartData.length > 0 ? (
               <Chart type="area" height={220} options={chartOpts} series={[{ name: "kWh", data: chartData.map(d => d.y) }]} />
             ) : (
               <Box sx={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No data available</Typography>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No consumption data yet today</Typography>
               </Box>
             )}
           </Paper>
@@ -219,17 +236,18 @@ function Dashboard() {
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
           }}>
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2.5, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Power Readings
+              Live Readings
             </Typography>
             {[
+              { label: "Power", val: power, unit: "W", color: "#f97316" },
               { label: "Voltage", val: voltage, unit: "V", color: "#3b82f6" },
               { label: "Current", val: current, unit: "A", color: "#10b981" },
-              { label: "Power", val: power, unit: "W", color: "#f97316" },
               { label: "Frequency", val: frequency, unit: "Hz", color: "#8b5cf6" },
+              { label: "Signal", val: signalStrengthData ? `${signalStrengthData}` : "---", unit: "dBm", color: "#eab308" },
             ].map((item, i) => (
               <Box key={i} sx={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                py: 1.2, borderBottom: i < 3 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
+                py: 1.2, borderBottom: i < 4 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
               }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: item.color }} />
@@ -242,7 +260,7 @@ function Dashboard() {
             ))}
 
             <Box sx={{ mt: 2.5 }}>
-              <EnergyBar value={unitsData || 0} max={100} isDark={isDark} />
+              <EnergyBar value={parseFloat(unitsData) || 0} max={5000} isDark={isDark} />
             </Box>
           </Paper>
         </Grid>

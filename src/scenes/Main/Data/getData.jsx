@@ -13,6 +13,7 @@ const DataProvider = ({ children }) => {
   const [unitsData, setUnitsData] = useState("");
   const [averageUnitsData, setAverageUnitsData] = useState("");
   const [allData, setAllData] = useState([]);
+  const [hourlyData, setHourlyData] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [grandTotal, setGrandTotal] = useState("");
   const [averageSystemLoad, setAverageSystemLoad] = useState("");
@@ -40,6 +41,7 @@ const DataProvider = ({ children }) => {
     current: "",
     frequency: "",
     active_energy: "",
+    power: "",
   });
   const [userData, setUserData] = useState({
     UserID: "",
@@ -75,22 +77,31 @@ const DataProvider = ({ children }) => {
     const drn = getDRN();
     if (!drn) return;
     try {
-      const data = await meterDataAPI.getPower(drn);
-      if (data && data !== 0) {
-        setUnitsData(data.units || data.active_energy || 0);
-        setAverageUnitsData(data.units_used_today || 0);
+      const [powerResp, energyResp] = await Promise.allSettled([
+        meterDataAPI.getPower(drn),
+        meterDataAPI.getEnergy(drn),
+      ]);
+
+      const pData = powerResp.status === "fulfilled" ? powerResp.value : null;
+      const eData = energyResp.status === "fulfilled" ? energyResp.value : null;
+
+      if (pData) {
         setPowerData({
-          voltage: data.voltage || 0,
-          current: data.current || 0,
-          frequency: data.frequency || 0,
-          active_energy: data.active_energy || 0,
+          voltage: pData.voltage || 0,
+          current: pData.current || 0,
+          frequency: pData.frequency || 0,
+          active_energy: pData.active_power || pData.active_energy || 0,
+          power: pData.active_power || 0,
         });
-        setSignalStrengthData(data.signal_strength || 0);
-      } else {
-        setUnitsData(0);
-        setAverageUnitsData(0);
-        setPowerData({ voltage: 0, current: 0, frequency: 0, active_energy: 0 });
-        setSignalStrengthData(0);
+        setSignalStrengthData(pData.signal_strength || 0);
+      }
+
+      if (eData) {
+        setUnitsData(parseFloat(eData.units || eData.active_energy || 0).toFixed(1));
+        setAverageUnitsData(eData.units_used_today || 0);
+      } else if (pData) {
+        setUnitsData(parseFloat(pData.active_energy || pData.units || 0).toFixed(1));
+        setAverageUnitsData(pData.units_used_today || 0);
       }
     } catch (error) {
       console.error("Error fetching meter power:", error);
@@ -101,11 +112,12 @@ const DataProvider = ({ children }) => {
     const drn = getDRN();
     if (!drn) return;
     try {
-      const data = await meterDataAPI.getHourlyData(drn);
-      if (data) {
-        setAllData(data.sums || data.data || []);
-        setAverageSystemLoad(data.averageUsage || 0);
-      }
+      const resp = await meterDataAPI.getHourlyData(drn);
+      const arr = resp?.data || resp?.sums || [];
+      setAllData(arr);
+      setHourlyData(arr);
+      const total = arr.reduce((s, h) => s + (parseFloat(h.kWh) || 0), 0);
+      setAverageSystemLoad(total > 0 ? (total / arr.filter(h => (parseFloat(h.kWh) || 0) > 0).length || 1).toFixed(2) : 0);
     } catch (error) {
       console.error("Error fetching hourly energy:", error);
     }
@@ -139,9 +151,7 @@ const DataProvider = ({ children }) => {
         setCurrentDayEnergy(data);
         setGrandTotal(data);
       }
-    } catch (error) {
-      console.error("Error fetching current day energy:", error);
-    }
+    } catch (error) {}
   };
 
   const fetchMonthlyEnergy = async () => {
@@ -150,9 +160,7 @@ const DataProvider = ({ children }) => {
       if (data) {
         setChartSeriesYearly({ Last: data.Last || [], Current: data.Current || [] });
       }
-    } catch (error) {
-      console.error("Error fetching monthly energy:", error);
-    }
+    } catch (error) {}
   };
 
   const fetchWeeklyEnergy = async () => {
@@ -164,9 +172,7 @@ const DataProvider = ({ children }) => {
           currentweek: data.currentweek || [],
         });
       }
-    } catch (error) {
-      console.error("Error fetching weekly energy:", error);
-    }
+    } catch (error) {}
   };
 
   const fetchTimePeriods = async () => {
@@ -179,9 +185,7 @@ const DataProvider = ({ children }) => {
           year: data.year || 0,
         });
       }
-    } catch (error) {
-      console.error("Error fetching time periods:", error);
-    }
+    } catch (error) {}
   };
 
   const fetchPercentageChange = async () => {
@@ -194,9 +198,7 @@ const DataProvider = ({ children }) => {
           year: data.yearPercentage || 0,
         });
       }
-    } catch (error) {
-      console.error("Error fetching percentage data:", error);
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -206,14 +208,16 @@ const DataProvider = ({ children }) => {
         const drn = getDRN();
         if (!drn) return;
         try {
-          const [heaterData, mainsData] = await Promise.allSettled([
+          const [heaterResp, mainsResp] = await Promise.allSettled([
             meterDataAPI.getHeaterState(drn),
             meterDataAPI.getMainsState(drn),
           ]);
           if (isMounted) {
+            const hData = heaterResp.status === "fulfilled" ? heaterResp.value : {};
+            const mData = mainsResp.status === "fulfilled" ? mainsResp.value : {};
             setLoadData({
-              geyser_state: heaterData.status === "fulfilled" ? heaterData.value : 0,
-              mains_state: mainsData.status === "fulfilled" ? mainsData.value : 0,
+              geyser_state: hData?.state || hData?.heater_state || 0,
+              mains_state: mData?.state || mData?.mains_state || 0,
             });
           }
         } catch (error) {
@@ -238,7 +242,7 @@ const DataProvider = ({ children }) => {
         fetchPercentageChange();
       };
       fetchAll();
-      const intervalId = setInterval(fetchAll, 600000);
+      const intervalId = setInterval(fetchAll, 60000);
       return () => clearInterval(intervalId);
     }
   }, [user, userInfo]);
@@ -249,6 +253,7 @@ const DataProvider = ({ children }) => {
     powerData,
     signalStrengthData,
     allData,
+    hourlyData,
     startDate,
     grandTotal,
     averageSystemLoad,
