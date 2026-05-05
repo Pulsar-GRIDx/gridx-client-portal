@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useContext } from "react";
 import {
-  Box, Typography, Paper, Grid, Chip,
+  Box, Typography, Paper, Grid, Chip, CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
-import { netMeteringAPI } from "../../../services/api";
+import { netMeteringAPI, meterDataAPI } from "../../../services/api";
 import Chart from "react-apexcharts";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import ElectricBoltRoundedIcon from "@mui/icons-material/ElectricBoltRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import TrendingDownRoundedIcon from "@mui/icons-material/TrendingDownRounded";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 
 function PowerFlowBox({ icon, label, value, unit, color, isDark }) {
   return (
@@ -30,6 +31,11 @@ function PowerFlowBox({ icon, label, value, unit, color, isDark }) {
   );
 }
 
+function whToKwh(val) {
+  const n = parseFloat(val || 0);
+  return isNaN(n) ? 0 : n / 1000;
+}
+
 function NetMetering() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -39,28 +45,56 @@ function NetMetering() {
   const [latest, setLatest] = useState(null);
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
+  const [powerInfo, setPowerInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!drn) return;
-    netMeteringAPI.getLatest(drn).then(d => setLatest(d?.data || d)).catch(() => {});
-    netMeteringAPI.getSummary(drn).then(d => setSummary(d?.data || d)).catch(() => {});
-    netMeteringAPI.getHistory(drn, 30).then(d => {
-      const arr = Array.isArray(d) ? d : d?.data || [];
-      setHistory(arr);
-    }).catch(() => {});
+    setLoading(true);
+    Promise.allSettled([
+      netMeteringAPI.getLatest(drn).then(d => setLatest(d?.data || d)),
+      netMeteringAPI.getSummary(drn).then(d => setSummary(d?.data || d)),
+      netMeteringAPI.getHistory(drn, 100).then(d => {
+        const arr = Array.isArray(d) ? d : d?.data || [];
+        setHistory(arr);
+      }),
+      meterDataAPI.getPower(drn).then(d => setPowerInfo(d)),
+    ]).finally(() => setLoading(false));
   }, [drn]);
 
-  const solarPower = latest?.solar_power || latest?.solarPower || 0;
-  const gridPower = latest?.grid_power || latest?.gridPower || 0;
-  const homePower = latest?.home_power || latest?.homePower || latest?.load_power || 0;
-  const netEnergy = latest?.net_energy || latest?.netEnergy || 0;
-  const isExporting = netEnergy > 0;
+  const importKwh = whToKwh(latest?.import_energy_wh);
+  const exportKwh = whToKwh(latest?.export_energy_wh);
+  const netKwh = whToKwh(latest?.net_energy_wh);
+  const isExporting = exportKwh > importKwh;
 
-  const historyChart = history.map(h => ({
-    x: h.date || h.timestamp ? new Date(h.date || h.timestamp).toLocaleDateString("en", { month: "short", day: "numeric" }) : "",
-    import: Math.abs(parseFloat(h.import_energy || h.imported || 0)),
-    export: Math.abs(parseFloat(h.export_energy || h.exported || 0)),
-  }));
+  const currentPower = parseFloat(powerInfo?.active_power || 0).toFixed(1);
+  const voltage = parseFloat(powerInfo?.voltage || 0).toFixed(1);
+
+  const hourlyMap = {};
+  history.forEach(h => {
+    const dt = new Date(h.created_at);
+    const key = `${String(dt.getHours()).padStart(2, "0")}:00`;
+    if (!hourlyMap[key]) {
+      hourlyMap[key] = { imports: [], exports: [] };
+    }
+    hourlyMap[key].imports.push(parseFloat(h.import_energy_wh || 0));
+    hourlyMap[key].exports.push(parseFloat(h.export_energy_wh || 0));
+  });
+
+  const hourKeys = Object.keys(hourlyMap).sort();
+  const historyChart = hourKeys.map(key => {
+    const imp = hourlyMap[key].imports;
+    const exp = hourlyMap[key].exports;
+    const impDelta = imp.length > 1 ? (Math.max(...imp) - Math.min(...imp)) / 1000 : 0;
+    const expDelta = exp.length > 1 ? (Math.max(...exp) - Math.min(...exp)) / 1000 : 0;
+    return { x: key, import: parseFloat(impDelta.toFixed(3)), export: parseFloat(expDelta.toFixed(3)) };
+  });
+
+  const totalImportKwh = whToKwh(summary?.total_import_wh).toFixed(2);
+  const totalExportKwh = whToKwh(summary?.total_export_wh).toFixed(2);
+  const totalNetKwh = whToKwh(summary?.total_net_wh);
+  const selfConsumedKwh = Math.max(0, parseFloat(totalExportKwh) - Math.abs(totalNetKwh)).toFixed(2);
+  const readingCount = summary?.reading_count || 0;
 
   const cardSx = {
     p: 3, borderRadius: 3,
@@ -77,12 +111,29 @@ function NetMetering() {
       labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
       axisBorder: { show: false }, axisTicks: { show: false },
     },
-    yaxis: { labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } } },
+    yaxis: {
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        formatter: (v) => v.toFixed(2),
+      },
+      title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+    },
     grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-    tooltip: { theme: isDark ? "dark" : "light" },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      y: { formatter: (v) => v.toFixed(3) + " kWh" },
+    },
     dataLabels: { enabled: false },
     legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxHeight: "calc(100vh - 80px)", overflowY: "auto", pb: 4, px: { xs: 0, sm: 1 } }}>
@@ -90,12 +141,12 @@ function NetMetering() {
         <Box>
           <Typography variant="h2" sx={{ color: isDark ? "#f1f5f9" : "#0f172a" }}>Net Metering</Typography>
           <Typography sx={{ color: isDark ? "#64748b" : "#94a3b8", fontSize: 13, mt: 0.5 }}>
-            Solar generation and grid exchange
+            Energy import/export monitoring ({readingCount} readings today)
           </Typography>
         </Box>
         <Chip
           icon={isExporting ? <TrendingUpRoundedIcon /> : <TrendingDownRoundedIcon />}
-          label={isExporting ? "Exporting" : "Importing"}
+          label={isExporting ? "Net Exporter" : "Net Importer"}
           sx={{
             fontWeight: 600, fontSize: 12,
             bgcolor: isExporting ? "rgba(34,197,94,0.1)" : "rgba(249,115,22,0.1)",
@@ -108,17 +159,38 @@ function NetMetering() {
 
       <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
         <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 3, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
-          Power Flow
+          Current Status
         </Typography>
         <Grid container spacing={2} alignItems="center" justifyContent="center">
           <Grid item xs={4}>
-            <PowerFlowBox icon={<SolarPowerRoundedIcon />} label="Solar" value={solarPower} unit="W" color="#eab308" isDark={isDark} />
+            <PowerFlowBox
+              icon={<TrendingDownRoundedIcon />}
+              label="Total Imported"
+              value={importKwh.toFixed(2)}
+              unit="kWh"
+              color="#f97316"
+              isDark={isDark}
+            />
           </Grid>
           <Grid item xs={4}>
-            <PowerFlowBox icon={<HomeRoundedIcon />} label="Home" value={homePower} unit="W" color="#3b82f6" isDark={isDark} />
+            <PowerFlowBox
+              icon={<BoltRoundedIcon />}
+              label="Active Power"
+              value={currentPower}
+              unit="W"
+              color="#3b82f6"
+              isDark={isDark}
+            />
           </Grid>
           <Grid item xs={4}>
-            <PowerFlowBox icon={<ElectricBoltRoundedIcon />} label="Grid" value={Math.abs(gridPower)} unit="W" color={isExporting ? "#22c55e" : "#f97316"} isDark={isDark} />
+            <PowerFlowBox
+              icon={<TrendingUpRoundedIcon />}
+              label="Total Exported"
+              value={exportKwh.toFixed(2)}
+              unit="kWh"
+              color="#22c55e"
+              isDark={isDark}
+            />
           </Grid>
         </Grid>
 
@@ -132,17 +204,20 @@ function NetMetering() {
             fontSize: 28, fontWeight: 700,
             color: isExporting ? "#22c55e" : "#f97316",
           }}>
-            {isExporting ? "+" : ""}{netEnergy} <span style={{ fontSize: 14 }}>kWh</span>
+            {netKwh > 0 ? "+" : ""}{netKwh.toFixed(2)} <span style={{ fontSize: 14 }}>kWh</span>
+          </Typography>
+          <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 0.5 }}>
+            {isExporting ? "Exporting more than importing" : "Importing more than exporting"} | {voltage} V
           </Typography>
         </Box>
       </Paper>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        {summary && [
-          { label: "Total Generated", val: summary.total_generated || summary.totalGenerated || "0", unit: "kWh", color: "#eab308" },
-          { label: "Total Exported", val: summary.total_exported || summary.totalExported || "0", unit: "kWh", color: "#22c55e" },
-          { label: "Total Imported", val: summary.total_imported || summary.totalImported || "0", unit: "kWh", color: "#f97316" },
-          { label: "Self Consumed", val: summary.self_consumed || summary.selfConsumed || "0", unit: "kWh", color: "#3b82f6" },
+        {[
+          { label: "Total Imported", val: totalImportKwh, unit: "kWh", color: "#f97316" },
+          { label: "Total Exported", val: totalExportKwh, unit: "kWh", color: "#22c55e" },
+          { label: "Net Balance", val: Math.abs(totalNetKwh).toFixed(2), unit: "kWh", color: isExporting ? "#22c55e" : "#f97316" },
+          { label: "Readings", val: readingCount, unit: "total", color: "#3b82f6" },
         ].map((item, i) => (
           <Grid item xs={6} sm={3} key={i}>
             <Paper elevation={0} sx={cardSx}>
@@ -160,7 +235,7 @@ function NetMetering() {
 
       <Paper elevation={0} sx={cardSx}>
         <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-          Import / Export History (Last 30 Days)
+          Hourly Import / Export
         </Typography>
         {historyChart.length > 0 ? (
           <Chart
