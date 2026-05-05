@@ -107,6 +107,8 @@ export const netMeteringAPI = {
   getLatest: (drn) => get(`/mqtt/net-energy/${drn}`),
   getSummary: (drn) => get(`/mqtt/net-energy/${drn}/summary`),
   getHistory: (drn, limit = 30) => get(`/mqtt/net-energy/${drn}/history?limit=${limit}`),
+  getHourly: (drn, date) => get(`/mqtt/net-energy/${drn}/hourly${date ? '?date=' + date : ''}`),
+  getDaily: (drn, days = 30) => get(`/mqtt/net-energy/${drn}/daily?days=${days}`),
 };
 
 export const mqttAPI = {
