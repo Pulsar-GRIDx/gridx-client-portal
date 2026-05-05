@@ -2,7 +2,7 @@
   "name": "gridx-client",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://pulsar-gridx.github.io/gridx-client-portal",
+  "homepage": "https://client.gridx-meters.com",
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
