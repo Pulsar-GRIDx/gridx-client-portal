@@ -18,7 +18,7 @@ const AuthProvider = ({ children }) => {
       const userData = response.user;
       sessionStorage.setItem("Token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
-      window.location.reload();
+      window.location.href = "/";
       return;
     } catch (err) {
       if (err.message.includes("Failed to fetch")) {
@@ -50,7 +50,7 @@ const AuthProvider = ({ children }) => {
       const userData = response.user;
       sessionStorage.setItem("Token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
-      window.location.reload();
+      window.location.href = "/";
       return;
     } catch (err) {
       if (err.message.includes("Failed to fetch")) {
