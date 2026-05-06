@@ -12,6 +12,8 @@ import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
+import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 
 function PowerFlowBox({ icon, label, value, unit, color, isDark, sub }) {
   return (
@@ -56,6 +58,7 @@ function NetMetering() {
   const [powerInfo, setPowerInfo] = useState(null);
   const [hourlyData, setHourlyData] = useState(null);
   const [dailyData, setDailyData] = useState(null);
+  const [extendedDaily, setExtendedDaily] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,6 +74,7 @@ function NetMetering() {
       meterDataAPI.getPower(drn).then(d => setPowerInfo(d)),
       netMeteringAPI.getHourly(drn).then(d => setHourlyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 30).then(d => setDailyData(d?.data || d)),
+      netMeteringAPI.getDaily(drn, 400).then(d => setExtendedDaily(d?.data || d)),
     ]).finally(() => setLoading(false));
   }, [drn]);
 
@@ -127,6 +131,41 @@ function NetMetering() {
       const expDelta = exp.length > 1 ? (Math.max(...exp) - Math.min(...exp)) / 1000 : 0;
       return { x: key, import: parseFloat(impDelta.toFixed(3)), export: parseFloat(expDelta.toFixed(3)) };
     });
+  })();
+
+  const weeklyNetData = (() => {
+    const rows = extendedDaily?.history || dailyData?.history || [];
+    if (rows.length === 0) return null;
+    const now = new Date();
+    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+    const thisMonday = new Date(now); thisMonday.setDate(now.getDate() - dayOfWeek + 1); thisMonday.setHours(0,0,0,0);
+    const lastMonday = new Date(thisMonday); lastMonday.setDate(thisMonday.getDate() - 7);
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const thisWeek = { import: Array(7).fill(0), export: Array(7).fill(0) };
+    const lastWeek = { import: Array(7).fill(0), export: Array(7).fill(0) };
+    rows.forEach(r => {
+      const d = new Date(r.date); d.setHours(0,0,0,0);
+      const dIdx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+      if (d >= thisMonday) { thisWeek.import[dIdx] = r.import / 1000; thisWeek.export[dIdx] = r.export / 1000; }
+      else if (d >= lastMonday && d < thisMonday) { lastWeek.import[dIdx] = r.import / 1000; lastWeek.export[dIdx] = r.export / 1000; }
+    });
+    return { dayNames, thisWeek, lastWeek };
+  })();
+
+  const monthlyNetData = (() => {
+    const rows = extendedDaily?.history || dailyData?.history || [];
+    if (rows.length === 0) return null;
+    const now = new Date();
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const thisYear = { import: Array(12).fill(0), export: Array(12).fill(0) };
+    const lastYear = { import: Array(12).fill(0), export: Array(12).fill(0) };
+    rows.forEach(r => {
+      const d = new Date(r.date);
+      const m = d.getMonth();
+      if (d.getFullYear() === now.getFullYear()) { thisYear.import[m] += r.import / 1000; thisYear.export[m] += r.export / 1000; }
+      else if (d.getFullYear() === now.getFullYear() - 1) { lastYear.import[m] += r.import / 1000; lastYear.export[m] += r.export / 1000; }
+    });
+    return { monthNames, thisYear, lastYear };
   })();
 
   const makeBarChartOpts = (categories) => ({
@@ -193,6 +232,8 @@ function NetMetering() {
           <Tab label="Overview" icon={<BoltRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Meter Readings" icon={<SpeedRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Daily History" icon={<CalendarMonthRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
+          <Tab label="Weekly" icon={<DateRangeRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
+          <Tab label="Monthly" icon={<BarChartRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
         </Tabs>
       </Paper>
 
@@ -462,6 +503,150 @@ function NetMetering() {
             <Paper elevation={0} sx={cardSx}>
               <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No daily history data available</Typography>
+              </Box>
+            </Paper>
+          )}
+        </>
+      )}
+
+      {/* TAB 3: WEEKLY COMPARISON */}
+      {tab === 3 && (
+        <>
+          {weeklyNetData ? (
+            <>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                {[
+                  { label: "This Week Import", val: weeklyNetData.thisWeek.import.reduce((s, v) => s + v, 0), color: "#f97316" },
+                  { label: "This Week Export", val: weeklyNetData.thisWeek.export.reduce((s, v) => s + v, 0), color: "#22c55e" },
+                  { label: "Last Week Import", val: weeklyNetData.lastWeek.import.reduce((s, v) => s + v, 0), color: "#fb923c" },
+                  { label: "Last Week Export", val: weeklyNetData.lastWeek.export.reduce((s, v) => s + v, 0), color: "#4ade80" },
+                ].map((item, i) => (
+                  <Grid item xs={6} sm={3} key={i}>
+                    <Paper elevation={0} sx={cardSx}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, mb: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                        <Typography sx={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: 22, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a" }}>
+                        {item.val.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 400, color: isDark ? "#64748b" : "#94a3b8" }}>kWh</span>
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+
+              <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  This Week vs Last Week - Import
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(weeklyNetData.dayNames),
+                    colors: ["#f97316", "#fdba74"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: "This Week", data: weeklyNetData.thisWeek.import.map(v => parseFloat(v.toFixed(3))) },
+                    { name: "Last Week", data: weeklyNetData.lastWeek.import.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+
+              <Paper elevation={0} sx={cardSx}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  This Week vs Last Week - Export
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(weeklyNetData.dayNames),
+                    colors: ["#22c55e", "#86efac"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: "This Week", data: weeklyNetData.thisWeek.export.map(v => parseFloat(v.toFixed(3))) },
+                    { name: "Last Week", data: weeklyNetData.lastWeek.export.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+            </>
+          ) : (
+            <Paper elevation={0} sx={cardSx}>
+              <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No weekly data available</Typography>
+              </Box>
+            </Paper>
+          )}
+        </>
+      )}
+
+      {/* TAB 4: MONTHLY COMPARISON */}
+      {tab === 4 && (
+        <>
+          {monthlyNetData ? (
+            <>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                {[
+                  { label: `${new Date().getFullYear()} Import`, val: monthlyNetData.thisYear.import.reduce((s, v) => s + v, 0), color: "#f97316" },
+                  { label: `${new Date().getFullYear()} Export`, val: monthlyNetData.thisYear.export.reduce((s, v) => s + v, 0), color: "#22c55e" },
+                  { label: `${new Date().getFullYear() - 1} Import`, val: monthlyNetData.lastYear.import.reduce((s, v) => s + v, 0), color: "#fb923c" },
+                  { label: `${new Date().getFullYear() - 1} Export`, val: monthlyNetData.lastYear.export.reduce((s, v) => s + v, 0), color: "#4ade80" },
+                ].map((item, i) => (
+                  <Grid item xs={6} sm={3} key={i}>
+                    <Paper elevation={0} sx={cardSx}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, mb: 1 }}>
+                        <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                        <Typography sx={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: 22, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a" }}>
+                        {item.val.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 400, color: isDark ? "#64748b" : "#94a3b8" }}>kWh</span>
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+
+              <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  {new Date().getFullYear()} vs {new Date().getFullYear() - 1} - Monthly Import
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(monthlyNetData.monthNames),
+                    colors: ["#f97316", "#fdba74"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: `${new Date().getFullYear()}`, data: monthlyNetData.thisYear.import.map(v => parseFloat(v.toFixed(3))) },
+                    { name: `${new Date().getFullYear() - 1}`, data: monthlyNetData.lastYear.import.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+
+              <Paper elevation={0} sx={cardSx}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  {new Date().getFullYear()} vs {new Date().getFullYear() - 1} - Monthly Export
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(monthlyNetData.monthNames),
+                    colors: ["#22c55e", "#86efac"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: `${new Date().getFullYear()}`, data: monthlyNetData.thisYear.export.map(v => parseFloat(v.toFixed(3))) },
+                    { name: `${new Date().getFullYear() - 1}`, data: monthlyNetData.lastYear.export.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+            </>
+          ) : (
+            <Paper elevation={0} sx={cardSx}>
+              <Box sx={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No monthly data available</Typography>
               </Box>
             </Paper>
           )}
