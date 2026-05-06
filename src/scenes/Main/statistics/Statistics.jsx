@@ -42,7 +42,7 @@ function Statistics() {
   const chartColors = ["#3b82f6", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#eab308"];
   const baseChartOpts = {
     chart: { toolbar: { show: false }, background: "transparent" },
-    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1 } },
+    fill: { type: "solid", opacity: 0.85 },
     xaxis: {
       labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
       axisBorder: { show: false }, axisTicks: { show: false },
@@ -138,6 +138,7 @@ function Statistics() {
                 options={{
                   ...baseChartOpts,
                   colors: [chartColors[0]],
+                  fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
                   stroke: { curve: "smooth", width: 2 },
                   xaxis: { ...baseChartOpts.xaxis, categories: hourlyChartData.map(d => d.x) },
                   yaxis: {

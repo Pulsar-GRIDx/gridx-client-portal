@@ -7,7 +7,6 @@ import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
 import { customerAuthAPI, meterDataAPI } from "../../../services/api";
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import ElectricMeterRoundedIcon from "@mui/icons-material/ElectricMeterRounded";
 
 function Settings() {
@@ -25,12 +24,10 @@ function Settings() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [profile, setProfile] = useState(null);
-  const [tokenInfo, setTokenInfo] = useState(null);
 
   useEffect(() => {
     if (!drn) return;
     meterDataAPI.getProfileByDRN(drn).then(d => setProfile(d?.data || d)).catch(() => {});
-    meterDataAPI.getTokenInfo(drn).then(d => setTokenInfo(d?.data || d)).catch(() => {});
   }, [drn]);
 
   const handleChangePassword = async () => {
@@ -109,7 +106,6 @@ function Settings() {
       >
         <Tab label="Change Password" icon={<LockResetRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
         <Tab label="Meter Info" icon={<ElectricMeterRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
-        <Tab label="Token Info" icon={<InfoRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
       </Tabs>
 
       {tab === 0 && (
@@ -210,35 +206,6 @@ function Settings() {
         </Paper>
       )}
 
-      {tab === 2 && (
-        <Paper elevation={0} sx={cardSx}>
-          <Typography sx={{ fontSize: 16, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-            Token Information
-          </Typography>
-          {tokenInfo ? (
-            <Grid container spacing={2}>
-              {Object.entries(tokenInfo).filter(([k]) => !k.startsWith("_") && k !== "id").map(([key, val], i) => (
-                <Grid item xs={12} sm={6} key={i}>
-                  <Box sx={{
-                    p: 2, borderRadius: 2,
-                    bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                    border: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}`,
-                  }}>
-                    <Typography sx={{ fontSize: 11, color: isDark ? "#64748b" : "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5, mb: 0.5 }}>
-                      {key.replace(/_/g, " ")}
-                    </Typography>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                      {String(val)}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          ) : (
-            <Typography sx={{ color: isDark ? "#475569" : "#94a3b8", fontSize: 13 }}>No token information available</Typography>
-          )}
-        </Paper>
-      )}
     </Box>
   );
 }
