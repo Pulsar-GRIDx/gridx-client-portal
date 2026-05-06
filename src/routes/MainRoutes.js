@@ -4,7 +4,6 @@ import { Box, CssBaseline } from "@mui/material";
 import Topbar from "../scenes/Main/global/TopBar";
 import Sidebar from "../scenes/Main/global/SideBar";
 import Dashboard from "../scenes/Main/dashboard/DashBoard";
-import Metertokendash from "../scenes/Main/newtoken/metertokendash";
 import ProfileDash from "../scenes/Main/profile/profiledash";
 import GeyserControl from "../scenes/Main/geyser/GeyserControl";
 import Recharge from "../scenes/Main/recharge/Recharge";
@@ -36,7 +35,6 @@ const MainRoutes = () => {
             <Box sx={{ pt: 8, px: { xs: 2, sm: 3 }, pb: 2 }}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/meter" element={<Metertokendash />} />
                 <Route path="/geyser" element={<GeyserControl />} />
                 <Route path="/recharge" element={<Recharge />} />
                 <Route path="/statistics" element={<Statistics />} />

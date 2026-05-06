@@ -22,7 +22,6 @@ const drawerWidth = 260;
 
 const navItems = [
   { label: "Dashboard", path: "/", icon: <DashboardRoundedIcon /> },
-  { label: "Meter Control", path: "/meter", icon: <BoltRoundedIcon /> },
   { label: "Geyser Control", path: "/geyser", icon: <WaterDropRoundedIcon /> },
   { label: "Recharge", path: "/recharge", icon: <AccountBalanceWalletRoundedIcon /> },
   { label: "Statistics", path: "/statistics", icon: <BarChartRoundedIcon /> },

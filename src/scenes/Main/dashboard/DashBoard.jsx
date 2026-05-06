@@ -113,7 +113,7 @@ function Dashboard() {
   const voltage = fmt(powerData?.voltage || powerData?.Voltage);
   const current = fmt(powerData?.current || powerData?.Current, 2);
   const power = fmt(powerData?.power || powerData?.active_energy || powerData?.Power);
-  const frequency = fmt(powerData?.frequency || powerData?.Frequency, 2);
+  const frequency = fmt((powerData?.frequency || powerData?.Frequency || 0) * 10, 1);
 
   const mainsState = String(loadData?.mains_state) === "1";
   const geyserState = String(loadData?.geyser_state) === "1";
