@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import AuthContext from "../../../../context/AuthContext";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 
@@ -91,13 +90,8 @@ function LoginDesktop() {
           bottom: "20%", right: "20%",
         }} />
         <Box sx={{ textAlign: "center", zIndex: 1, px: 6 }}>
-          <Box sx={{
-            width: 72, height: 72, borderRadius: 3, mx: "auto", mb: 3,
-            background: "linear-gradient(135deg, #3b82f6, #10b981)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 20px 40px rgba(59,130,246,0.3)",
-          }}>
-            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 40 }} />
+          <Box sx={{ mx: "auto", mb: 3, display: "flex", justifyContent: "center" }}>
+            <img src="/meter-logo.png" alt="GRIDx Meter" style={{ width: 140, height: "auto", filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.3))" }} />
           </Box>
           <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f1f5f9", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif" }}>
             GRIDx Portal
@@ -126,13 +120,7 @@ function LoginDesktop() {
       }}>
         <Box sx={{ width: "100%", maxWidth: 400 }}>
           <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4, justifyContent: "center" }}>
-            <Box sx={{
-              width: 40, height: 40, borderRadius: 2,
-              background: "linear-gradient(135deg, #3b82f6, #10b981)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <BoltRoundedIcon sx={{ color: "#fff", fontSize: 24 }} />
-            </Box>
+            <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 36, height: "auto" }} />
             <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9" }}>GRIDx</Typography>
           </Box>
 

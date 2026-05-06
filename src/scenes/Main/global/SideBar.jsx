@@ -8,7 +8,6 @@ import {
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
@@ -54,13 +53,7 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", py: 2 }}>
       <Box sx={{ px: 2.5, mb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box sx={{
-            width: 36, height: 36, borderRadius: "10px",
-            background: "linear-gradient(135deg, #3b82f6, #10b981)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 22 }} />
-          </Box>
+          <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 32, height: "auto" }} />
           <Typography sx={{ fontWeight: 700, fontSize: 18, color: isDark ? "#f1f5f9" : "#0f172a" }}>
             GRIDx
           </Typography>
