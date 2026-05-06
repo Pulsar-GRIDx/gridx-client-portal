@@ -15,7 +15,7 @@ function Statistics() {
   const isDark = theme.palette.mode === "dark";
   const { userInfo } = useContext(AuthContext);
   const drn = userInfo?.DRN || JSON.parse(sessionStorage.getItem("user") || "{}")?.DRN || "";
-  const { hourlyData, currentDayEnergy } = useData();
+  const { hourlyData, timeperiodsEnergy, chartSeriesWeekly } = useData();
 
   const [period, setPeriod] = useState("hourly");
   const [weeklyData, setWeeklyData] = useState(null);
@@ -323,22 +323,37 @@ function Statistics() {
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
               Consumption Summary
             </Typography>
-            {[
-              { label: "Today", val: `${parseFloat(currentDayEnergy || 0).toFixed(2)} kWh`, color: "#3b82f6" },
-              { label: "This Week", val: weeklyData?.currentWeekTotal ? `${weeklyData.currentWeekTotal} kWh` : "N/A", color: "#10b981" },
-              { label: "This Month", val: monthlyData?.currentMonthTotal ? `${monthlyData.currentMonthTotal} kWh` : "N/A", color: "#f97316" },
-            ].map((item, i) => (
-              <Box key={i} sx={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                py: 1.5, borderBottom: i < 2 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
-              }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
-                  <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
+            {(() => {
+              const todayKwh = parseFloat(timeperiodsEnergy?.day || 0);
+              const weekArr = chartSeriesWeekly?.currentweek || chartSeriesWeekly?.currentWeek || [];
+              const weekKwh = Array.isArray(weekArr) ? weekArr.reduce((s, v) => s + (parseFloat(v) || 0), 0) : 0;
+              const monthKwh = parseFloat(timeperiodsEnergy?.month || 0);
+              return [
+                { label: "Today", kwh: todayKwh, color: "#3b82f6" },
+                { label: "This Week", kwh: weekKwh, color: "#10b981" },
+                { label: "This Month", kwh: monthKwh, color: "#f97316" },
+              ].map((item, i) => (
+                <Box key={i} sx={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  py: 1.5, borderBottom: i < 2 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                    <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                      {item.kwh.toFixed(2)} kWh
+                    </Typography>
+                    {currentRate > 0 && (
+                      <Typography sx={{ fontSize: 11, color: isDark ? "#34d399" : "#059669" }}>
+                        N$ {(item.kwh * currentRate).toFixed(2)}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
-                <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>{item.val}</Typography>
-              </Box>
-            ))}
+              ));
+            })()}
           </Paper>
         </Grid>
         <Grid item xs={12} md={6}>
