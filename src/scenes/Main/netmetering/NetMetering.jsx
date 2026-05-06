@@ -82,7 +82,7 @@ function NetMetering() {
   const currentPower = parseFloat(powerInfo?.active_power || 0).toFixed(1);
   const voltage = parseFloat(powerInfo?.voltage || 0).toFixed(1);
   const current = parseFloat(powerInfo?.current || 0).toFixed(2);
-  const frequency = (parseFloat(powerInfo?.frequency || 0) * 10).toFixed(1);
+  const frequency = (parseFloat(powerInfo?.frequency || 0) * 100).toFixed(1);
 
   const totalImportKwh = whToKwh(summary?.total_import_wh).toFixed(2);
   const totalExportKwh = whToKwh(summary?.total_export_wh).toFixed(2);

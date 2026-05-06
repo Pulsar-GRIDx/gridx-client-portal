@@ -53,7 +53,7 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", py: 2 }}>
       <Box sx={{ px: 2.5, mb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 32, height: "auto" }} />
+          <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 48, height: "auto" }} />
           <Typography sx={{ fontWeight: 700, fontSize: 18, color: isDark ? "#f1f5f9" : "#0f172a" }}>
             GRIDx
           </Typography>

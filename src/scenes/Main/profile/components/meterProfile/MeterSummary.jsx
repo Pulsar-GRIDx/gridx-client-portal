@@ -53,7 +53,7 @@ const MeterSummary = ({ loadData, meterNetwork, meterPower, meterEnergy }) => {
     },
     {
       title: "Frequency",
-      value: (parseFloat(meterPower.frequency || 0) * 10).toFixed(1),
+      value: (parseFloat(meterPower.frequency || 0) * 100).toFixed(1),
       icon: AutoGraphIcon,
       Units: " Hz",
       color: "#FB8C00",
