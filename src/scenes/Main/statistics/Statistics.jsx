@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import {
-  Box, Typography, Paper, Grid, ToggleButton, ToggleButtonGroup,
+  Box, Typography, Paper, ToggleButton, ToggleButtonGroup,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -8,7 +8,6 @@ import AuthContext from "../../../context/AuthContext";
 import { useData } from "../Data/getData";
 import { energyDataAPI, meterDataAPI, vendingAPI } from "../../../services/api";
 import Chart from "react-apexcharts";
-import CalendarTodayRoundedIcon from "@mui/icons-material/CalendarTodayRounded";
 
 function Statistics() {
   const theme = useTheme();
@@ -317,78 +316,42 @@ function Statistics() {
         </Paper>
       )}
 
-      <Grid container spacing={2} sx={{ mt: 2 }}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={cardSx}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Consumption Summary
-            </Typography>
-            {(() => {
-              const todayKwh = parseFloat(timeperiodsEnergy?.day || 0);
-              const weekArr = chartSeriesWeekly?.currentweek || chartSeriesWeekly?.currentWeek || [];
-              const weekKwh = Array.isArray(weekArr) ? weekArr.reduce((s, v) => s + (parseFloat(v) || 0), 0) : 0;
-              const monthKwh = parseFloat(timeperiodsEnergy?.month || 0);
-              return [
-                { label: "Today", kwh: todayKwh, color: "#3b82f6" },
-                { label: "This Week", kwh: weekKwh, color: "#10b981" },
-                { label: "This Month", kwh: monthKwh, color: "#f97316" },
-              ].map((item, i) => (
-                <Box key={i} sx={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                  py: 1.5, borderBottom: i < 2 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
-                }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
-                    <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right" }}>
-                    <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                      {item.kwh.toFixed(2)} kWh
-                    </Typography>
-                    {currentRate > 0 && (
-                      <Typography sx={{ fontSize: 11, color: isDark ? "#34d399" : "#059669" }}>
-                        N$ {(item.kwh * currentRate).toFixed(2)}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-              ));
-            })()}
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={cardSx}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Usage Insights
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box sx={{
-                p: 2, borderRadius: 2,
-                bgcolor: isDark ? "rgba(59,130,246,0.08)" : "rgba(37,99,235,0.05)",
-                border: `1px solid ${isDark ? "rgba(59,130,246,0.15)" : "rgba(37,99,235,0.1)"}`,
-              }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                  <CalendarTodayRoundedIcon sx={{ fontSize: 16, color: isDark ? "#60a5fa" : "#2563eb" }} />
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: isDark ? "#60a5fa" : "#2563eb" }}>Peak Hours</Typography>
-                </Box>
-                <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>
-                  Monitor your peak consumption hours to optimize energy usage and reduce costs.
-                </Typography>
+      <Paper elevation={0} sx={{ ...cardSx, mt: 2 }}>
+        <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+          Consumption Summary
+        </Typography>
+        {(() => {
+          const todayKwh = parseFloat(timeperiodsEnergy?.day || 0);
+          const weekArr = chartSeriesWeekly?.currentweek || chartSeriesWeekly?.currentWeek || [];
+          const weekKwh = Array.isArray(weekArr) ? weekArr.reduce((s, v) => s + (parseFloat(v) || 0), 0) : 0;
+          const monthKwh = parseFloat(timeperiodsEnergy?.month || 0);
+          return [
+            { label: "Today", kwh: todayKwh, color: "#3b82f6" },
+            { label: "This Week", kwh: weekKwh, color: "#10b981" },
+            { label: "This Month", kwh: monthKwh, color: "#f97316" },
+          ].map((item, i) => (
+            <Box key={i} sx={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              py: 1.5, borderBottom: i < 2 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
+            }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color }} />
+                <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
               </Box>
-              <Box sx={{
-                p: 2, borderRadius: 2,
-                bgcolor: isDark ? "rgba(16,185,129,0.08)" : "rgba(5,150,105,0.05)",
-                border: `1px solid ${isDark ? "rgba(16,185,129,0.15)" : "rgba(5,150,105,0.1)"}`,
-              }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: isDark ? "#34d399" : "#059669", mb: 0.5 }}>Energy Tip</Typography>
-                <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>
-                  Shifting heavy loads to off-peak hours can reduce your electricity costs by up to 30%.
+              <Box sx={{ textAlign: "right" }}>
+                <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  {item.kwh.toFixed(2)} kWh
                 </Typography>
+                {currentRate > 0 && (
+                  <Typography sx={{ fontSize: 11, color: isDark ? "#34d399" : "#059669" }}>
+                    N$ {(item.kwh * currentRate).toFixed(2)}
+                  </Typography>
+                )}
               </Box>
             </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+          ));
+        })()}
+      </Paper>
     </Box>
   );
 }
