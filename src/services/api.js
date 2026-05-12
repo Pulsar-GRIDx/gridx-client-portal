@@ -43,6 +43,7 @@ export const customerAuthAPI = {
 
 export const meterDataAPI = {
   getPower: (drn) => get(`/meterPower/getLastUpdate/${drn}`),
+  getPowerByDate: (drn, year, month, day) => get(`/meterPower/getByDRNAndDate/${year}/${month}/${day}/${drn}`),
   getEnergy: (drn) => get(`/meterEnergy/getLastUpdate/${drn}`),
   getLoadControl: (drn) => get(`/meterLoadControl/getLastUpdate/${drn}`),
   getMainsState: (drn) => get(`/meterMainsState/getLastUpdate/${drn}`),

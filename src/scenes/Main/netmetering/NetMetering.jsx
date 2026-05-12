@@ -16,7 +16,6 @@ import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 
 const POLL_INTERVAL = 10000;
-const MAX_BUFFER = 180;
 
 const flowKeyframes = `
 @keyframes flowRight {
@@ -178,29 +177,34 @@ function NetMetering() {
       netMeteringAPI.getHourly(drn).then(d => setHourlyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 30).then(d => setDailyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 400).then(d => setExtendedDaily(d?.data || d)),
-      meterHealthAPI.getHistory(drn, 100).then(d => {
-        const rows = Array.isArray(d) ? d : d?.data || [];
-        const readings = rows
-          .filter(r => r.voltage || r.active_power)
-          .map(r => {
-            const v = parseFloat(r.voltage || 0);
-            const i = parseFloat(r.current_val || r.current || 0);
-            const ap = parseFloat(r.active_power || 0);
-            const freq = parseFloat(r.frequency || 0) * 100;
-            const pf = parseFloat(r.power_factor || 0);
-            const apparent = parseFloat(r.apparent_power || 0) || (v * i);
-            const reactive = parseFloat(r.reactive_power || 0) ||
-              (apparent > Math.abs(ap) ? Math.sqrt(apparent * apparent - ap * ap) : 0);
-            return {
-              time: new Date(r.created_at).getTime(),
-              voltage: v, frequency: freq, active_power: ap,
-              reactive_power: reactive, apparent_power: apparent, power_factor: pf,
-            };
-          })
-          .filter(r => !isNaN(r.time))
-          .sort((a, b) => a.time - b.time);
-        setPowerBuffer(readings);
-      }),
+      (() => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        return meterDataAPI.getPowerByDate(drn, y, m, d).then(data => {
+          const rows = Array.isArray(data) ? data : data?.data || [];
+          const readings = rows
+            .map(r => {
+              const v = parseFloat(r.voltage || 0);
+              const i = parseFloat(r.current || r.current_val || 0);
+              const ap = parseFloat(r.active_power || 0);
+              const freq = parseFloat(r.frequency || 0) * 100;
+              const pf = parseFloat(r.power_factor || 0);
+              const apparent = parseFloat(r.apparent_power || 0) || (v * i);
+              const reactive = parseFloat(r.reactive_power || 0) ||
+                (apparent > Math.abs(ap) ? Math.sqrt(apparent * apparent - ap * ap) : 0);
+              return {
+                time: new Date(r.created_at || r.createdAt || r.timestamp).getTime(),
+                voltage: v, frequency: freq, active_power: ap,
+                reactive_power: reactive, apparent_power: apparent, power_factor: pf,
+              };
+            })
+            .filter(r => !isNaN(r.time))
+            .sort((a, b) => a.time - b.time);
+          setPowerBuffer(readings);
+        });
+      })(),
     ]).finally(() => setLoading(false));
   }, [drn]);
 
@@ -224,7 +228,11 @@ function NetMetering() {
           apparent_power: apparent,
           power_factor: parseFloat(data.power_factor || 0),
         };
-        setPowerBuffer(prev => [...prev.slice(-(MAX_BUFFER - 1)), reading]);
+        setPowerBuffer(prev => {
+          const lastTime = prev.length > 0 ? prev[prev.length - 1].time : 0;
+          if (reading.time <= lastTime) return prev;
+          return [...prev, reading];
+        });
         setPowerInfo(data);
       }).catch(() => {});
     };
