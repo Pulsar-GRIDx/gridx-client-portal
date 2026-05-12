@@ -6,8 +6,11 @@ import {
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
 import { useData } from "../Data/getData";
-import { energyDataAPI, meterDataAPI, vendingAPI } from "../../../services/api";
+import { energyDataAPI, meterDataAPI, vendingAPI, netMeteringAPI } from "../../../services/api";
 import Chart from "react-apexcharts";
+
+const IMPORT_RATE = 2.45;
+const EXPORT_RATE = 1.60;
 
 function Statistics() {
   const theme = useTheme();
@@ -21,6 +24,7 @@ function Statistics() {
   const [monthlyData, setMonthlyData] = useState(null);
   const [dailyPower, setDailyPower] = useState([]);
   const [tariffInfo, setTariffInfo] = useState(null);
+  const [netHourlyData, setNetHourlyData] = useState(null);
 
   useEffect(() => {
     energyDataAPI.getWeekly().then(d => setWeeklyData(d?.data || d)).catch(() => {});
@@ -32,6 +36,9 @@ function Statistics() {
       }).catch(() => {});
       vendingAPI.getTariffInfo(drn).then(d => {
         setTariffInfo(d?.data || d);
+      }).catch(() => {});
+      netMeteringAPI.getHourly(drn).then(d => {
+        setNetHourlyData(d?.data || d);
       }).catch(() => {});
     }
   }, [drn]);
@@ -74,6 +81,28 @@ function Statistics() {
 
   const totalKwh = hourlyCostData.reduce((s, h) => s + h.kwh, 0);
   const totalCost = hourlyCostData.reduce((s, h) => s + h.cost, 0);
+
+  const netHourlyCost = (() => {
+    const hourly = netHourlyData?.hourly;
+    if (!Array.isArray(hourly)) return [];
+    return hourly
+      .filter(h => h.import > 0 || h.export > 0)
+      .map(h => {
+        const impKwh = (h.import || 0) / 1000;
+        const expKwh = (h.export || 0) / 1000;
+        return {
+          hour: `${String(h.hour).padStart(2, "0")}:00`,
+          importKwh: impKwh,
+          exportKwh: expKwh,
+          importCost: impKwh * IMPORT_RATE,
+          exportCost: expKwh * EXPORT_RATE,
+        };
+      });
+  })();
+  const totalImportCost = netHourlyCost.reduce((s, h) => s + h.importCost, 0);
+  const totalExportCost = netHourlyCost.reduce((s, h) => s + h.exportCost, 0);
+  const totalImportKwh = netHourlyCost.reduce((s, h) => s + h.importKwh, 0);
+  const totalExportKwh = netHourlyCost.reduce((s, h) => s + h.exportKwh, 0);
 
   const cardSx = {
     p: 3, borderRadius: 3,
@@ -221,6 +250,119 @@ function Statistics() {
               </Typography>
             )}
           </Paper>
+
+          {netHourlyCost.length > 0 && (
+            <>
+              <Paper elevation={0} sx={{ ...cardSx, mt: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                    Hourly Import / Export Cost
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: isDark ? "#64748b" : "#94a3b8" }}>
+                    Import: N$ {IMPORT_RATE.toFixed(4)}/kWh | Export: N$ {EXPORT_RATE.toFixed(4)}/kWh
+                  </Typography>
+                </Box>
+                <TableContainer sx={{ maxHeight: 480 }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        {["Hour", "Import (kWh)", "Import Cost (N$)", "Export (kWh)", "Export Cost (N$)", "Net Cost (N$)"].map(h => (
+                          <TableCell key={h} align={h === "Hour" ? "left" : "right"}
+                            sx={{ ...headerCellSx, bgcolor: isDark ? "#0f1729" : "#fff" }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {netHourlyCost.map((row, i) => {
+                        const net = row.importCost - row.exportCost;
+                        return (
+                          <TableRow key={i} sx={{ "&:hover": { bgcolor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.01)" } }}>
+                            <TableCell sx={{ ...cellSx, fontWeight: 500 }}>{row.hour}</TableCell>
+                            <TableCell align="right" sx={{ ...cellSx, color: "#f97316", fontWeight: 600 }}>
+                              {row.importKwh.toFixed(4)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ ...cellSx, color: "#f97316", fontWeight: 600 }}>
+                              {row.importCost.toFixed(4)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ ...cellSx, color: "#22c55e", fontWeight: 600 }}>
+                              {row.exportKwh.toFixed(4)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ ...cellSx, color: "#22c55e", fontWeight: 600 }}>
+                              {row.exportCost.toFixed(4)}
+                            </TableCell>
+                            <TableCell align="right" sx={{ ...cellSx, fontWeight: 600, color: net > 0 ? "#f97316" : "#22c55e" }}>
+                              {net > 0 ? "" : "-"}N$ {Math.abs(net).toFixed(4)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      <TableRow>
+                        <TableCell sx={{ ...cellSx, fontWeight: 700, borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                          Total
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: "#f97316", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                          {totalImportKwh.toFixed(4)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: "#f97316", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                          N$ {totalImportCost.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: "#22c55e", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                          {totalExportKwh.toFixed(4)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: "#22c55e", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                          N$ {totalExportCost.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ ...cellSx, fontWeight: 700,
+                          color: totalImportCost - totalExportCost > 0 ? "#f97316" : "#22c55e",
+                          borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none"
+                        }}>
+                          {totalImportCost - totalExportCost > 0 ? "" : "-"}N$ {Math.abs(totalImportCost - totalExportCost).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+
+              <Paper elevation={0} sx={{ ...cardSx, mt: 2 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  Import vs Export Cost
+                </Typography>
+                <Chart
+                  type="bar" height={380}
+                  options={{
+                    ...baseChartOpts,
+                    colors: ["#f97316", "#22c55e"],
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                    xaxis: {
+                      ...baseChartOpts.xaxis,
+                      categories: netHourlyCost.map(d => d.hour),
+                      labels: { ...baseChartOpts.xaxis.labels, rotate: -45 },
+                    },
+                    yaxis: {
+                      ...baseChartOpts.yaxis,
+                      title: { text: "Cost (N$)", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                      labels: {
+                        ...baseChartOpts.yaxis.labels,
+                        formatter: (v) => "N$ " + v.toFixed(2),
+                      },
+                    },
+                    tooltip: {
+                      ...baseChartOpts.tooltip,
+                      y: { formatter: (v) => "N$ " + v.toFixed(4) },
+                    },
+                    legend: { ...baseChartOpts.legend, position: "top" },
+                  }}
+                  series={[
+                    { name: "Import Cost (N$)", data: netHourlyCost.map(d => parseFloat(d.importCost.toFixed(4))) },
+                    { name: "Export Cost (N$)", data: netHourlyCost.map(d => parseFloat(d.exportCost.toFixed(4))) },
+                  ]}
+                />
+              </Paper>
+            </>
+          )}
         </>
       )}
 

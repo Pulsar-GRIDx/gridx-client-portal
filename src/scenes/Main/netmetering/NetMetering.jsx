@@ -18,6 +18,104 @@ import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 const POLL_INTERVAL = 10000;
 const MAX_BUFFER = 180;
 
+const flowKeyframes = `
+@keyframes flowRight {
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(400%); opacity: 0; }
+}
+@keyframes flowLeft {
+  0% { transform: translateX(400%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+`;
+
+function PowerFlowAnimation({ isExporting, power, isDark }) {
+  const color = isExporting ? "#22c55e" : "#f97316";
+  const direction = isExporting ? "Home to Grid" : "Grid to Home";
+  const anim = isExporting ? "flowLeft" : "flowRight";
+  const pw = Math.abs(parseFloat(power || 0));
+  const speed = pw > 500 ? 1.2 : pw > 100 ? 1.8 : 2.5;
+
+  return (
+    <Box sx={{ textAlign: "center" }}>
+      <style>{flowKeyframes}</style>
+      <Typography sx={{ fontSize: 12, fontWeight: 600, color, mb: 1.5, letterSpacing: 1 }}>
+        {direction.toUpperCase()}
+      </Typography>
+      <Box sx={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        gap: { xs: 1, sm: 3 }, px: 2,
+      }}>
+        <Box sx={{ textAlign: "center", minWidth: 70 }}>
+          <Box sx={{
+            width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
+            bgcolor: isExporting ? "rgba(34,197,94,0.1)" : "rgba(59,130,246,0.1)",
+            border: `2px solid ${isExporting ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.3)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "pulseGlow 2s ease-in-out infinite",
+          }}>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "🏠" : "⚡"}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+            {isExporting ? "HOME" : "GRID"}
+          </Typography>
+        </Box>
+
+        <Box sx={{
+          flex: 1, maxWidth: 260, height: 32, position: "relative", overflow: "hidden",
+          borderRadius: 16, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+          border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+        }}>
+          {[0, 1, 2, 3].map(i => (
+            <Box key={i} sx={{
+              position: "absolute", top: "50%", left: 0, transform: "translateY(-50%)",
+              width: 18, height: 18, borderRadius: "50%",
+              bgcolor: color,
+              boxShadow: `0 0 12px ${color}`,
+              animation: `${anim} ${speed}s linear infinite`,
+              animationDelay: `${i * speed / 4}s`,
+            }} />
+          ))}
+          <Box sx={{
+            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+            fontSize: 10, fontWeight: 700, color, bgcolor: isDark ? "#0f172a" : "#fff",
+            px: 1, py: 0.2, borderRadius: 4, zIndex: 1, whiteSpace: "nowrap",
+          }}>
+            {pw.toFixed(0)} W
+          </Box>
+        </Box>
+
+        <Box sx={{ textAlign: "center", minWidth: 70 }}>
+          <Box sx={{
+            width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
+            bgcolor: isExporting ? "rgba(59,130,246,0.1)" : "rgba(249,115,22,0.1)",
+            border: `2px solid ${isExporting ? "rgba(59,130,246,0.3)" : "rgba(249,115,22,0.3)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "pulseGlow 2s ease-in-out infinite",
+            animationDelay: "1s",
+          }}>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "⚡" : "🏠"}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+            {isExporting ? "GRID" : "HOME"}
+          </Typography>
+        </Box>
+      </Box>
+      <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 1.5 }}>
+        {isExporting ? "Solar generation exceeds consumption" : "Consuming power from the grid"}
+      </Typography>
+    </Box>
+  );
+}
+
 function PowerFlowBox({ icon, label, value, unit, color, isDark, sub }) {
   return (
     <Box sx={{ textAlign: "center" }}>
@@ -551,9 +649,16 @@ function NetMetering() {
       {tab === 1 && (
         <>
           <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 3, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
-              Current Status
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
+              Live Power Flow
             </Typography>
+            <Box sx={{
+              p: 3, mb: 3, borderRadius: 3,
+              bgcolor: isDark ? "rgba(255,255,255,0.02)" : "#f8fafc",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}`,
+            }}>
+              <PowerFlowAnimation isExporting={isExporting} power={currentPower} isDark={isDark} />
+            </Box>
             <Grid container spacing={2} alignItems="center" justifyContent="center">
               <Grid item xs={4}>
                 <PowerFlowBox icon={<TrendingDownRoundedIcon />} label="Total Imported" value={importKwh.toFixed(2)} unit="kWh" color="#f97316" isDark={isDark} />
