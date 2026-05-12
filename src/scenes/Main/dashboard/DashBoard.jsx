@@ -1,23 +1,126 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   Box, Typography, Paper, Grid, Chip, LinearProgress, IconButton, Tooltip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useData } from "../Data/getData";
 import AuthContext from "../../../context/AuthContext";
-import { meterDataAPI, vendingAPI, meterHealthAPI } from "../../../services/api";
+import { meterDataAPI, vendingAPI, meterHealthAPI, netMeteringAPI } from "../../../services/api";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import ThermostatRoundedIcon from "@mui/icons-material/ThermostatRounded";
 import PowerRoundedIcon from "@mui/icons-material/PowerRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
 import BatteryChargingFullRoundedIcon from "@mui/icons-material/BatteryChargingFullRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
+import TrendingDownRoundedIcon from "@mui/icons-material/TrendingDownRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SignalCellularAltRoundedIcon from "@mui/icons-material/SignalCellularAltRounded";
 import ElectricMeterRoundedIcon from "@mui/icons-material/ElectricMeterRounded";
+import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import Chart from "react-apexcharts";
+
+const IMPORT_RATE = 2.45;
+const EXPORT_RATE = 1.60;
+const POLL_INTERVAL = 10000;
+
+const flowKeyframes = `
+@keyframes flowRight {
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(400%); opacity: 0; }
+}
+@keyframes flowLeft {
+  0% { transform: translateX(400%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+`;
+
+function PowerFlowAnimation({ isExporting, power, isDark }) {
+  const color = isExporting ? "#22c55e" : "#f97316";
+  const direction = isExporting ? "Home to Grid" : "Grid to Home";
+  const anim = isExporting ? "flowLeft" : "flowRight";
+  const pw = Math.abs(parseFloat(power || 0));
+  const speed = pw > 500 ? 1.2 : pw > 100 ? 1.8 : 2.5;
+
+  return (
+    <Box sx={{ textAlign: "center" }}>
+      <style>{flowKeyframes}</style>
+      <Typography sx={{ fontSize: 12, fontWeight: 600, color, mb: 1.5, letterSpacing: 1 }}>
+        {direction.toUpperCase()}
+      </Typography>
+      <Box sx={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        gap: { xs: 1, sm: 3 }, px: 2,
+      }}>
+        <Box sx={{ textAlign: "center", minWidth: 70 }}>
+          <Box sx={{
+            width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
+            bgcolor: isExporting ? "rgba(34,197,94,0.1)" : "rgba(59,130,246,0.1)",
+            border: `2px solid ${isExporting ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.3)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "pulseGlow 2s ease-in-out infinite",
+          }}>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "\u{1F3E0}" : "⚡"}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+            {isExporting ? "HOME" : "GRID"}
+          </Typography>
+        </Box>
+
+        <Box sx={{
+          flex: 1, maxWidth: 260, height: 32, position: "relative", overflow: "hidden",
+          borderRadius: 16, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+          border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+        }}>
+          {[0, 1, 2, 3].map(i => (
+            <Box key={i} sx={{
+              position: "absolute", top: "50%", left: 0, transform: "translateY(-50%)",
+              width: 18, height: 18, borderRadius: "50%",
+              bgcolor: color, boxShadow: `0 0 12px ${color}`,
+              animation: `${anim} ${speed}s linear infinite`,
+              animationDelay: `${i * speed / 4}s`,
+            }} />
+          ))}
+          <Box sx={{
+            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+            fontSize: 10, fontWeight: 700, color, bgcolor: isDark ? "#0f172a" : "#fff",
+            px: 1, py: 0.2, borderRadius: 4, zIndex: 1, whiteSpace: "nowrap",
+          }}>
+            {pw.toFixed(0)} W
+          </Box>
+        </Box>
+
+        <Box sx={{ textAlign: "center", minWidth: 70 }}>
+          <Box sx={{
+            width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
+            bgcolor: isExporting ? "rgba(59,130,246,0.1)" : "rgba(249,115,22,0.1)",
+            border: `2px solid ${isExporting ? "rgba(59,130,246,0.3)" : "rgba(249,115,22,0.3)"}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "pulseGlow 2s ease-in-out infinite",
+            animationDelay: "1s",
+          }}>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "⚡" : "\u{1F3E0}"}</Typography>
+          </Box>
+          <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+            {isExporting ? "GRID" : "HOME"}
+          </Typography>
+        </Box>
+      </Box>
+      <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 1.5 }}>
+        {isExporting ? "Solar generation exceeds consumption" : "Consuming power from the grid"}
+      </Typography>
+    </Box>
+  );
+}
 
 function StatCard({ title, value, unit, icon, color, subtitle, isDark }) {
   return (
@@ -96,12 +199,29 @@ function Dashboard() {
   const [healthData, setHealthData] = useState(null);
   const [location, setLocation] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [netLatest, setNetLatest] = useState(null);
+  const [netHourly, setNetHourly] = useState(null);
+  const [netDaily, setNetDaily] = useState(null);
+  const [livePower, setLivePower] = useState(null);
+  const pollRef = useRef(null);
 
   useEffect(() => {
     if (!drn) return;
     vendingAPI.getTariffInfo(drn).then(d => setTariffInfo(d)).catch(() => {});
     meterHealthAPI.getLatest(drn).then(d => setHealthData(d?.data || d)).catch(() => {});
     meterDataAPI.getLocation(drn).then(d => setLocation(d?.data || d)).catch(() => {});
+    netMeteringAPI.getLatest(drn).then(d => setNetLatest(d?.data || d)).catch(() => {});
+    netMeteringAPI.getHourly(drn).then(d => setNetHourly(d?.data || d)).catch(() => {});
+    netMeteringAPI.getDaily(drn, 400).then(d => setNetDaily(d?.data || d)).catch(() => {});
+    meterDataAPI.getPower(drn).then(d => setLivePower(d)).catch(() => {});
+  }, [drn]);
+
+  useEffect(() => {
+    if (!drn) return;
+    pollRef.current = setInterval(() => {
+      meterDataAPI.getPower(drn).then(d => setLivePower(d)).catch(() => {});
+    }, POLL_INTERVAL);
+    return () => clearInterval(pollRef.current);
   }, [drn]);
 
   const handleRefresh = () => {
@@ -265,6 +385,211 @@ function Dashboard() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* LIVE POWER FLOW */}
+      {(() => {
+        const importWh = parseFloat(netLatest?.import_energy_wh || 0);
+        const exportWh = parseFloat(netLatest?.export_energy_wh || 0);
+        const isExp = exportWh > importWh;
+        const lp = parseFloat(livePower?.active_power || powerData?.active_energy || powerData?.Power || 0);
+
+        const hourlyRows = (() => {
+          if (!netHourly?.hourly) return [];
+          return netHourly.hourly
+            .filter(h => h.import > 0 || h.export > 0)
+            .map(h => {
+              const impKwh = h.import / 1000;
+              const expKwh = h.export / 1000;
+              return {
+                hour: `${String(h.hour).padStart(2, "0")}:00`,
+                importKwh: impKwh,
+                importCost: impKwh * IMPORT_RATE,
+                exportKwh: expKwh,
+                exportCost: expKwh * EXPORT_RATE,
+                netCost: (impKwh * IMPORT_RATE) - (expKwh * EXPORT_RATE),
+              };
+            });
+        })();
+
+        const dayTotals = hourlyRows.reduce((acc, r) => ({
+          importKwh: acc.importKwh + r.importKwh,
+          importCost: acc.importCost + r.importCost,
+          exportKwh: acc.exportKwh + r.exportKwh,
+          exportCost: acc.exportCost + r.exportCost,
+          netCost: acc.netCost + r.netCost,
+        }), { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
+
+        const monthTotals = (() => {
+          const rows = netDaily?.history || [];
+          const now = new Date();
+          const thisMonth = now.getMonth();
+          const thisYear = now.getFullYear();
+          return rows
+            .filter(r => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+            .reduce((acc, r) => {
+              const ik = r.import / 1000;
+              const ek = r.export / 1000;
+              return {
+                importKwh: acc.importKwh + ik,
+                importCost: acc.importCost + ik * IMPORT_RATE,
+                exportKwh: acc.exportKwh + ek,
+                exportCost: acc.exportCost + ek * EXPORT_RATE,
+                netCost: acc.netCost + (ik * IMPORT_RATE - ek * EXPORT_RATE),
+              };
+            }, { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
+        })();
+
+        const cardBg = isDark ? "rgba(30,41,59,0.6)" : "#fff";
+        const cardBorder = `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`;
+        const headerColor = isDark ? "#e2e8f0" : "#1e293b";
+        const subColor = isDark ? "#94a3b8" : "#64748b";
+        const rowAlt = isDark ? "rgba(255,255,255,0.02)" : "#f8fafc";
+
+        return (
+          <>
+            <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <SolarPowerRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
+                <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColor }}>
+                  Live Power Flow
+                </Typography>
+                <Chip
+                  size="small"
+                  icon={isExp ? <TrendingUpRoundedIcon /> : <TrendingDownRoundedIcon />}
+                  label={isExp ? "Exporting" : "Importing"}
+                  sx={{
+                    ml: "auto", fontWeight: 600, fontSize: 11,
+                    bgcolor: isExp ? "rgba(34,197,94,0.1)" : "rgba(249,115,22,0.1)",
+                    color: isExp ? "#22c55e" : "#f97316",
+                    border: `1px solid ${isExp ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+                    "& .MuiChip-icon": { color: "inherit" },
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                p: 3, borderRadius: 3,
+                bgcolor: isDark ? "rgba(255,255,255,0.02)" : "#f8fafc",
+                border: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}`,
+              }}>
+                <PowerFlowAnimation isExporting={isExp} power={lp} isDark={isDark} />
+              </Box>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: "center", p: 1.5, borderRadius: 2, bgcolor: isDark ? "rgba(249,115,22,0.06)" : "rgba(249,115,22,0.04)" }}>
+                    <Typography sx={{ fontSize: 10, color: subColor, mb: 0.3 }}>Imported</Typography>
+                    <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>
+                      {(importWh / 1000).toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: "center", p: 1.5, borderRadius: 2, bgcolor: isDark ? "rgba(59,130,246,0.06)" : "rgba(59,130,246,0.04)" }}>
+                    <Typography sx={{ fontSize: 10, color: subColor, mb: 0.3 }}>Active Power</Typography>
+                    <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#3b82f6" }}>
+                      {lp.toFixed(1)} <span style={{ fontSize: 10, fontWeight: 400 }}>W</span>
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: "center", p: 1.5, borderRadius: 2, bgcolor: isDark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.04)" }}>
+                    <Typography sx={{ fontSize: 10, color: subColor, mb: 0.3 }}>Exported</Typography>
+                    <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#22c55e" }}>
+                      {(exportWh / 1000).toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+
+            {/* TODAY'S HOURLY IMPORT/EXPORT COST */}
+            <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
+                Today's Import / Export Cost
+              </Typography>
+              <Box sx={{ overflowX: "auto" }}>
+                <Box component="table" sx={{
+                  width: "100%", borderCollapse: "collapse", fontSize: 12,
+                  "& th": { textAlign: "left", py: 1, px: 1.5, color: subColor, fontWeight: 600, fontSize: 11, borderBottom: `2px solid ${isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0"}` },
+                  "& td": { py: 1, px: 1.5, color: isDark ? "#e2e8f0" : "#1e293b", fontSize: 12, borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` },
+                }}>
+                  <thead>
+                    <tr>
+                      <th>Hour</th>
+                      <th style={{ textAlign: "right" }}>Import (kWh)</th>
+                      <th style={{ textAlign: "right" }}>Import Cost (N$)</th>
+                      <th style={{ textAlign: "right" }}>Export (kWh)</th>
+                      <th style={{ textAlign: "right" }}>Export Cost (N$)</th>
+                      <th style={{ textAlign: "right" }}>Net Cost (N$)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hourlyRows.length > 0 ? hourlyRows.map((r, i) => (
+                      <tr key={i} style={{ background: i % 2 === 0 ? rowAlt : "transparent" }}>
+                        <td style={{ fontFamily: "monospace" }}>{r.hour}</td>
+                        <td style={{ textAlign: "right", color: "#f97316", fontWeight: 600 }}>{r.importKwh.toFixed(3)}</td>
+                        <td style={{ textAlign: "right", color: "#f97316" }}>{r.importCost.toFixed(2)}</td>
+                        <td style={{ textAlign: "right", color: "#22c55e", fontWeight: 600 }}>{r.exportKwh.toFixed(3)}</td>
+                        <td style={{ textAlign: "right", color: "#22c55e" }}>{r.exportCost.toFixed(2)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: r.netCost > 0 ? "#f97316" : "#22c55e" }}>
+                          {r.netCost > 0 ? "" : "-"}{Math.abs(r.netCost).toFixed(2)}
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={6} style={{ textAlign: "center", color: subColor, py: 20 }}>No hourly data yet today</td></tr>
+                    )}
+                    {hourlyRows.length > 0 && (
+                      <tr style={{ background: isDark ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.04)" }}>
+                        <td style={{ fontWeight: 700 }}>Today Total</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#f97316" }}>{dayTotals.importKwh.toFixed(3)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#f97316" }}>{dayTotals.importCost.toFixed(2)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#22c55e" }}>{dayTotals.exportKwh.toFixed(3)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#22c55e" }}>{dayTotals.exportCost.toFixed(2)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: dayTotals.netCost > 0 ? "#f97316" : "#22c55e" }}>
+                          {dayTotals.netCost > 0 ? "" : "-"}{Math.abs(dayTotals.netCost).toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* MONTHLY TOTALS */}
+            <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
+                {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()} Totals
+              </Typography>
+              <Grid container spacing={2}>
+                {[
+                  { label: "Import", val: monthTotals.importKwh.toFixed(2), unit: "kWh", cost: monthTotals.importCost.toFixed(2), color: "#f97316" },
+                  { label: "Export", val: monthTotals.exportKwh.toFixed(2), unit: "kWh", cost: monthTotals.exportCost.toFixed(2), color: "#22c55e" },
+                  { label: "Net Cost", val: Math.abs(monthTotals.netCost).toFixed(2), unit: "N$", cost: null, color: monthTotals.netCost > 0 ? "#f97316" : "#22c55e", prefix: monthTotals.netCost > 0 ? "Debit" : "Credit" },
+                ].map((item, i) => (
+                  <Grid item xs={4} key={i}>
+                    <Box sx={{
+                      p: 2, borderRadius: 2, textAlign: "center",
+                      bgcolor: `${item.color}08`, border: `1px solid ${item.color}20`,
+                    }}>
+                      <Typography sx={{ fontSize: 11, color: subColor, mb: 0.5 }}>{item.label}</Typography>
+                      <Typography sx={{ fontSize: 22, fontWeight: 700, color: item.color }}>
+                        {item.val} <span style={{ fontSize: 11, fontWeight: 400 }}>{item.unit}</span>
+                      </Typography>
+                      {item.cost && (
+                        <Typography sx={{ fontSize: 12, color: item.color, mt: 0.5, fontWeight: 600 }}>
+                          N$ {item.cost}
+                        </Typography>
+                      )}
+                      {item.prefix && (
+                        <Typography sx={{ fontSize: 10, color: subColor, mt: 0.3 }}>{item.prefix}</Typography>
+                      )}
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </>
+        );
+      })()}
 
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6} md={4}>
