@@ -281,51 +281,10 @@ function NetMetering() {
     legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
   });
 
-  const freqVoltOpts = {
-    chart: {
-      type: "line", toolbar: { show: false }, background: "transparent",
-      animations: { enabled: true, dynamicAnimation: { speed: 800 } },
-      zoom: { enabled: false },
-    },
-    stroke: { curve: "smooth", width: 2 },
-    colors: ["#06b6d4", "#8b5cf6"],
-    xaxis: {
-      type: "datetime",
-      labels: {
-        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
-        datetimeFormatter: { hour: "HH:mm", minute: "HH:mm" },
-      },
-      axisBorder: { show: false }, axisTicks: { show: false },
-    },
-    yaxis: [
-      {
-        title: { text: "Hz", style: { color: "#06b6d4", fontSize: "11px" } },
-        labels: {
-          style: { colors: "#06b6d4", fontSize: "10px" },
-          formatter: (v) => v != null ? v.toFixed(1) : "",
-        },
-      },
-      {
-        opposite: true,
-        title: { text: "V", style: { color: "#8b5cf6", fontSize: "11px" } },
-        labels: {
-          style: { colors: "#8b5cf6", fontSize: "10px" },
-          formatter: (v) => v != null ? v.toFixed(0) : "",
-        },
-      },
-    ],
-    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-    tooltip: { theme: isDark ? "dark" : "light", x: { format: "HH:mm:ss" } },
-    dataLabels: { enabled: false },
-    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
-  };
-
   const buf = powerBuffer;
   const noData = buf.length === 0;
-  const freqSeries = [
-    { name: "Frequency (Hz)", data: buf.map(r => [r.time, r.frequency]) },
-    { name: "Voltage (V)", data: buf.map(r => [r.time, r.voltage]) },
-  ];
+  const voltageSeries = [{ name: "Voltage (V)", data: buf.map(r => [r.time, r.voltage]) }];
+  const freqSeries = [{ name: "Frequency (Hz)", data: buf.map(r => [r.time, r.frequency]) }];
   const activeSeries = [{ name: "Active Power (W)", data: buf.map(r => [r.time, r.active_power]) }];
   const reactiveSeries = [{ name: "Reactive Power (VAR)", data: buf.map(r => [r.time, r.reactive_power]) }];
   const apparentSeries = [{ name: "Apparent Power (VA)", data: buf.map(r => [r.time, r.apparent_power]) }];
@@ -340,7 +299,7 @@ function NetMetering() {
   }
 
   const chartPlaceholder = (
-    <Box sx={{ height: 260, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <Box sx={{ height: 380, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for readings...</Typography>
     </Box>
   );
@@ -481,10 +440,19 @@ function NetMetering() {
 
           <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Hourly Frequency and Voltage
+              Voltage
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={280} options={freqVoltOpts} series={freqSeries} />
+              <Chart type="line" height={380} options={makeLineOpts(["#8b5cf6"], "V", (v) => v != null ? v.toFixed(1) + " V" : "N/A")} series={voltageSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Frequency
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={380} options={makeLineOpts(["#06b6d4"], "Hz", (v) => v != null ? v.toFixed(1) + " Hz" : "N/A")} series={freqSeries} />
             )}
           </Paper>
 
@@ -493,7 +461,7 @@ function NetMetering() {
               Active Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={260} options={makeLineOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
+              <Chart type="line" height={380} options={makeLineOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
             )}
           </Paper>
 
@@ -502,7 +470,7 @@ function NetMetering() {
               Reactive Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={260} options={makeLineOpts(["#f59e0b"], "VAR", (v) => v != null ? v.toFixed(1) + " VAR" : "N/A")} series={reactiveSeries} />
+              <Chart type="line" height={380} options={makeLineOpts(["#f59e0b"], "VAR", (v) => v != null ? v.toFixed(1) + " VAR" : "N/A")} series={reactiveSeries} />
             )}
           </Paper>
 
@@ -511,7 +479,7 @@ function NetMetering() {
               Apparent Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={260} options={makeLineOpts(["#ec4899"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={apparentSeries} />
+              <Chart type="line" height={380} options={makeLineOpts(["#ec4899"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={apparentSeries} />
             )}
           </Paper>
 
@@ -520,7 +488,7 @@ function NetMetering() {
               Power Factor
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={260} options={{
+              <Chart type="line" height={380} options={{
                 ...makeLineOpts(["#10b981"], "", (v) => v != null ? v.toFixed(3) : "N/A"),
                 yaxis: {
                   min: 0, max: 1,
