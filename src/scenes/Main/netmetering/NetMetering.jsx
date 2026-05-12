@@ -36,11 +36,14 @@ const flowKeyframes = `
 }
 `;
 
-function PowerFlowAnimation({ isExporting, power, isDark }) {
-  const color = isExporting ? "#22c55e" : "#f97316";
-  const direction = isExporting ? "Home to Grid" : "Grid to Home";
+function PowerFlowAnimation({ activePower, isDark }) {
+  const ap = parseFloat(activePower || 0);
+  const isNeutral = ap === 0;
+  const isExporting = ap < 0;
+  const pw = Math.abs(ap);
+  const color = isNeutral ? (isDark ? "#475569" : "#94a3b8") : isExporting ? "#22c55e" : "#f97316";
+  const direction = isNeutral ? "Idle" : isExporting ? "Home to Grid" : "Grid to Home";
   const anim = isExporting ? "flowLeft" : "flowRight";
-  const pw = Math.abs(parseFloat(power || 0));
   const speed = pw > 500 ? 1.2 : pw > 100 ? 1.8 : 2.5;
 
   return (
@@ -56,12 +59,12 @@ function PowerFlowAnimation({ isExporting, power, isDark }) {
         <Box sx={{ textAlign: "center", minWidth: 70 }}>
           <Box sx={{
             width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
-            bgcolor: isExporting ? "rgba(34,197,94,0.1)" : "rgba(59,130,246,0.1)",
-            border: `2px solid ${isExporting ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.3)"}`,
+            bgcolor: isNeutral ? (isDark ? "rgba(71,85,105,0.15)" : "rgba(148,163,184,0.1)") : isExporting ? "rgba(34,197,94,0.1)" : "rgba(59,130,246,0.1)",
+            border: `2px solid ${isNeutral ? (isDark ? "rgba(71,85,105,0.3)" : "rgba(148,163,184,0.3)") : isExporting ? "rgba(34,197,94,0.3)" : "rgba(59,130,246,0.3)"}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "pulseGlow 2s ease-in-out infinite",
+            animation: isNeutral ? "none" : "pulseGlow 2s ease-in-out infinite",
           }}>
-            <Typography sx={{ fontSize: 22 }}>{isExporting ? "🏠" : "⚡"}</Typography>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "\u{1F3E0}" : "⚡"}</Typography>
           </Box>
           <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             {isExporting ? "HOME" : "GRID"}
@@ -73,12 +76,11 @@ function PowerFlowAnimation({ isExporting, power, isDark }) {
           borderRadius: 16, bgcolor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
           border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
         }}>
-          {[0, 1, 2, 3].map(i => (
+          {!isNeutral && [0, 1, 2, 3].map(i => (
             <Box key={i} sx={{
               position: "absolute", top: "50%", left: 0, transform: "translateY(-50%)",
               width: 18, height: 18, borderRadius: "50%",
-              bgcolor: color,
-              boxShadow: `0 0 12px ${color}`,
+              bgcolor: color, boxShadow: `0 0 12px ${color}`,
               animation: `${anim} ${speed}s linear infinite`,
               animationDelay: `${i * speed / 4}s`,
             }} />
@@ -88,20 +90,20 @@ function PowerFlowAnimation({ isExporting, power, isDark }) {
             fontSize: 10, fontWeight: 700, color, bgcolor: isDark ? "#0f172a" : "#fff",
             px: 1, py: 0.2, borderRadius: 4, zIndex: 1, whiteSpace: "nowrap",
           }}>
-            {pw.toFixed(0)} W
+            {isNeutral ? "0 W" : `${pw.toFixed(0)} W`}
           </Box>
         </Box>
 
         <Box sx={{ textAlign: "center", minWidth: 70 }}>
           <Box sx={{
             width: 56, height: 56, borderRadius: "50%", mx: "auto", mb: 0.5,
-            bgcolor: isExporting ? "rgba(59,130,246,0.1)" : "rgba(249,115,22,0.1)",
-            border: `2px solid ${isExporting ? "rgba(59,130,246,0.3)" : "rgba(249,115,22,0.3)"}`,
+            bgcolor: isNeutral ? (isDark ? "rgba(71,85,105,0.15)" : "rgba(148,163,184,0.1)") : isExporting ? "rgba(59,130,246,0.1)" : "rgba(249,115,22,0.1)",
+            border: `2px solid ${isNeutral ? (isDark ? "rgba(71,85,105,0.3)" : "rgba(148,163,184,0.3)") : isExporting ? "rgba(59,130,246,0.3)" : "rgba(249,115,22,0.3)"}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "pulseGlow 2s ease-in-out infinite",
+            animation: isNeutral ? "none" : "pulseGlow 2s ease-in-out infinite",
             animationDelay: "1s",
           }}>
-            <Typography sx={{ fontSize: 22 }}>{isExporting ? "⚡" : "🏠"}</Typography>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "⚡" : "\u{1F3E0}"}</Typography>
           </Box>
           <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             {isExporting ? "GRID" : "HOME"}
@@ -109,7 +111,7 @@ function PowerFlowAnimation({ isExporting, power, isDark }) {
         </Box>
       </Box>
       <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 1.5 }}>
-        {isExporting ? "Solar generation exceeds consumption" : "Consuming power from the grid"}
+        {isNeutral ? "No active power flow" : isExporting ? "Solar generation exceeds consumption" : "Consuming power from the grid"}
       </Typography>
     </Box>
   );
@@ -243,9 +245,10 @@ function NetMetering() {
   const importKwh = whToKwh(latest?.import_energy_wh);
   const exportKwh = whToKwh(latest?.export_energy_wh);
   const netKwh = whToKwh(latest?.net_energy_wh);
-  const isExporting = exportKwh > importKwh;
+  const currentPowerRaw = parseFloat(powerInfo?.active_power || 0);
+  const isExporting = currentPowerRaw < 0;
 
-  const currentPower = parseFloat(powerInfo?.active_power || 0).toFixed(1);
+  const currentPower = currentPowerRaw.toFixed(1);
   const voltage = parseFloat(powerInfo?.voltage || 0).toFixed(1);
   const current = parseFloat(powerInfo?.current || 0).toFixed(2);
   const frequency = (parseFloat(powerInfo?.frequency || 0) * 100).toFixed(1);
@@ -665,7 +668,7 @@ function NetMetering() {
               bgcolor: isDark ? "rgba(255,255,255,0.02)" : "#f8fafc",
               border: `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}`,
             }}>
-              <PowerFlowAnimation isExporting={isExporting} power={currentPower} isDark={isDark} />
+              <PowerFlowAnimation activePower={currentPowerRaw} isDark={isDark} />
             </Box>
             <Grid container spacing={2} alignItems="center" justifyContent="center">
               <Grid item xs={4}>
