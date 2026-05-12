@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   Box, Typography, Paper, Grid, Chip, CircularProgress, Tabs, Tab,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
-import { netMeteringAPI, meterDataAPI } from "../../../services/api";
+import { netMeteringAPI, meterDataAPI, meterHealthAPI } from "../../../services/api";
 import Chart from "react-apexcharts";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import TrendingDownRoundedIcon from "@mui/icons-material/TrendingDownRounded";
@@ -14,6 +14,9 @@ import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import DateRangeRoundedIcon from "@mui/icons-material/DateRangeRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
+
+const POLL_INTERVAL = 10000;
+const MAX_BUFFER = 180;
 
 function PowerFlowBox({ icon, label, value, unit, color, isDark, sub }) {
   return (
@@ -60,6 +63,8 @@ function NetMetering() {
   const [dailyData, setDailyData] = useState(null);
   const [extendedDaily, setExtendedDaily] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [powerBuffer, setPowerBuffer] = useState([]);
+  const pollRef = useRef(null);
 
   useEffect(() => {
     if (!drn) return;
@@ -75,7 +80,58 @@ function NetMetering() {
       netMeteringAPI.getHourly(drn).then(d => setHourlyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 30).then(d => setDailyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 400).then(d => setExtendedDaily(d?.data || d)),
+      meterHealthAPI.getHistory(drn, 100).then(d => {
+        const rows = Array.isArray(d) ? d : d?.data || [];
+        const readings = rows
+          .filter(r => r.voltage || r.active_power)
+          .map(r => {
+            const v = parseFloat(r.voltage || 0);
+            const i = parseFloat(r.current_val || r.current || 0);
+            const ap = parseFloat(r.active_power || 0);
+            const freq = parseFloat(r.frequency || 0) * 100;
+            const pf = parseFloat(r.power_factor || 0);
+            const apparent = parseFloat(r.apparent_power || 0) || (v * i);
+            const reactive = parseFloat(r.reactive_power || 0) ||
+              (apparent > Math.abs(ap) ? Math.sqrt(apparent * apparent - ap * ap) : 0);
+            return {
+              time: new Date(r.created_at).getTime(),
+              voltage: v, frequency: freq, active_power: ap,
+              reactive_power: reactive, apparent_power: apparent, power_factor: pf,
+            };
+          })
+          .filter(r => !isNaN(r.time))
+          .sort((a, b) => a.time - b.time);
+        setPowerBuffer(readings);
+      }),
     ]).finally(() => setLoading(false));
+  }, [drn]);
+
+  useEffect(() => {
+    if (!drn) return;
+    const poll = () => {
+      meterDataAPI.getPower(drn).then(data => {
+        if (!data) return;
+        const v = parseFloat(data.voltage || 0);
+        const i = parseFloat(data.current || 0);
+        const ap = parseFloat(data.active_power || 0);
+        const apparent = parseFloat(data.apparent_power || 0) || (v * i);
+        const reactive = parseFloat(data.reactive_power || 0) ||
+          (apparent > Math.abs(ap) ? Math.sqrt(apparent * apparent - ap * ap) : 0);
+        const reading = {
+          time: Date.now(),
+          voltage: v,
+          frequency: parseFloat(data.frequency || 0) * 100,
+          active_power: ap,
+          reactive_power: reactive,
+          apparent_power: apparent,
+          power_factor: parseFloat(data.power_factor || 0),
+        };
+        setPowerBuffer(prev => [...prev.slice(-(MAX_BUFFER - 1)), reading]);
+        setPowerInfo(data);
+      }).catch(() => {});
+    };
+    pollRef.current = setInterval(poll, POLL_INTERVAL);
+    return () => clearInterval(pollRef.current);
   }, [drn]);
 
   const importKwh = whToKwh(latest?.import_energy_wh);
@@ -87,6 +143,9 @@ function NetMetering() {
   const voltage = parseFloat(powerInfo?.voltage || 0).toFixed(1);
   const current = parseFloat(powerInfo?.current || 0).toFixed(2);
   const frequency = (parseFloat(powerInfo?.frequency || 0) * 100).toFixed(1);
+  const reactivePower = parseFloat(powerInfo?.reactive_power || 0).toFixed(1);
+  const apparentPower = parseFloat(powerInfo?.apparent_power || 0).toFixed(1);
+  const powerFactor = parseFloat(powerInfo?.power_factor || 0).toFixed(2);
 
   const totalImportKwh = whToKwh(summary?.total_import_wh).toFixed(2);
   const totalExportKwh = whToKwh(summary?.total_export_wh).toFixed(2);
@@ -105,7 +164,6 @@ function NetMetering() {
     "&.Mui-selected": { color: isDark ? "#f1f5f9" : "#0f172a" },
   };
 
-  // Hourly chart from history (fallback) or from /hourly endpoint
   const hourlyChartData = (() => {
     if (hourlyData?.hourly) {
       return hourlyData.hourly
@@ -190,6 +248,89 @@ function NetMetering() {
     legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
   });
 
+  const makeLineOpts = (colors, yLabel, yFormatter) => ({
+    chart: {
+      type: "line", toolbar: { show: false }, background: "transparent",
+      animations: { enabled: true, dynamicAnimation: { speed: 800 } },
+      zoom: { enabled: false },
+    },
+    stroke: { curve: "smooth", width: 2 },
+    colors,
+    xaxis: {
+      type: "datetime",
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        datetimeFormatter: { hour: "HH:mm", minute: "HH:mm" },
+      },
+      axisBorder: { show: false }, axisTicks: { show: false },
+    },
+    yaxis: {
+      title: { text: yLabel, style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        formatter: yFormatter || ((v) => v != null ? v.toFixed(1) : ""),
+      },
+    },
+    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      x: { format: "HH:mm:ss" },
+      y: { formatter: yFormatter || ((v) => v != null ? v.toFixed(2) : "N/A") },
+    },
+    dataLabels: { enabled: false },
+    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+  });
+
+  const freqVoltOpts = {
+    chart: {
+      type: "line", toolbar: { show: false }, background: "transparent",
+      animations: { enabled: true, dynamicAnimation: { speed: 800 } },
+      zoom: { enabled: false },
+    },
+    stroke: { curve: "smooth", width: 2 },
+    colors: ["#06b6d4", "#8b5cf6"],
+    xaxis: {
+      type: "datetime",
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        datetimeFormatter: { hour: "HH:mm", minute: "HH:mm" },
+      },
+      axisBorder: { show: false }, axisTicks: { show: false },
+    },
+    yaxis: [
+      {
+        title: { text: "Hz", style: { color: "#06b6d4", fontSize: "11px" } },
+        labels: {
+          style: { colors: "#06b6d4", fontSize: "10px" },
+          formatter: (v) => v != null ? v.toFixed(1) : "",
+        },
+      },
+      {
+        opposite: true,
+        title: { text: "V", style: { color: "#8b5cf6", fontSize: "11px" } },
+        labels: {
+          style: { colors: "#8b5cf6", fontSize: "10px" },
+          formatter: (v) => v != null ? v.toFixed(0) : "",
+        },
+      },
+    ],
+    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+    tooltip: { theme: isDark ? "dark" : "light", x: { format: "HH:mm:ss" } },
+    dataLabels: { enabled: false },
+    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+  };
+
+  const buf = powerBuffer;
+  const noData = buf.length === 0;
+  const freqSeries = [
+    { name: "Frequency (Hz)", data: buf.map(r => [r.time, r.frequency]) },
+    { name: "Voltage (V)", data: buf.map(r => [r.time, r.voltage]) },
+  ];
+  const activeSeries = [{ name: "Active Power (W)", data: buf.map(r => [r.time, r.active_power]) }];
+  const reactiveSeries = [{ name: "Reactive Power (VAR)", data: buf.map(r => [r.time, r.reactive_power]) }];
+  const apparentSeries = [{ name: "Apparent Power (VA)", data: buf.map(r => [r.time, r.apparent_power]) }];
+  const pfSeries = [{ name: "Power Factor", data: buf.map(r => [r.time, r.power_factor]) }];
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
@@ -197,6 +338,12 @@ function NetMetering() {
       </Box>
     );
   }
+
+  const chartPlaceholder = (
+    <Box sx={{ height: 260, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for readings...</Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ maxHeight: "calc(100vh - 80px)", overflowY: "auto", pb: 4, px: { xs: 0, sm: 1 } }}>
@@ -229,16 +376,211 @@ function NetMetering() {
             "& .MuiTabs-indicator": { bgcolor: "#3b82f6", height: 3 },
           }}
         >
-          <Tab label="Overview" icon={<BoltRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Meter Readings" icon={<SpeedRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
+          <Tab label="Overview" icon={<BoltRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Daily History" icon={<CalendarMonthRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Weekly" icon={<DateRangeRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
           <Tab label="Monthly" icon={<BarChartRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
         </Tabs>
       </Paper>
 
-      {/* TAB 0: OVERVIEW */}
+      {/* TAB 0: METER READINGS */}
       {tab === 0 && (
+        <>
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 3, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
+              Current Meter Register Values
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{
+                  p: 3, borderRadius: 3, textAlign: "center",
+                  bgcolor: isDark ? "rgba(249,115,22,0.06)" : "rgba(249,115,22,0.04)",
+                  border: "2px solid rgba(249,115,22,0.15)",
+                }}>
+                  <TrendingDownRoundedIcon sx={{ fontSize: 40, color: "#f97316", mb: 1 }} />
+                  <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b", mb: 1, fontWeight: 500 }}>
+                    Import Register (Grid to Home)
+                  </Typography>
+                  <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f97316", lineHeight: 1.2 }}>
+                    {importKwh.toFixed(2)}
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8", mt: 0.5 }}>kWh</Typography>
+                  <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#cbd5e1", mt: 1 }}>
+                    Raw: {parseFloat(latest?.import_energy_wh || 0).toFixed(0)} Wh
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{
+                  p: 3, borderRadius: 3, textAlign: "center",
+                  bgcolor: isDark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.04)",
+                  border: "2px solid rgba(34,197,94,0.15)",
+                }}>
+                  <TrendingUpRoundedIcon sx={{ fontSize: 40, color: "#22c55e", mb: 1 }} />
+                  <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b", mb: 1, fontWeight: 500 }}>
+                    Export Register (Home to Grid)
+                  </Typography>
+                  <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#22c55e", lineHeight: 1.2 }}>
+                    {exportKwh.toFixed(2)}
+                  </Typography>
+                  <Typography sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8", mt: 0.5 }}>kWh</Typography>
+                  <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#cbd5e1", mt: 1 }}>
+                    Raw: {parseFloat(latest?.export_energy_wh || 0).toFixed(0)} Wh
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+            <Box sx={{
+              mt: 3, p: 2.5, borderRadius: 2, textAlign: "center",
+              bgcolor: isExporting
+                ? (isDark ? "rgba(34,197,94,0.08)" : "rgba(34,197,94,0.05)")
+                : (isDark ? "rgba(249,115,22,0.08)" : "rgba(249,115,22,0.05)"),
+              border: `1px solid ${isExporting ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+            }}>
+              <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", mb: 0.5 }}>Net Register Value</Typography>
+              <Typography sx={{ fontSize: 32, fontWeight: 800, color: isExporting ? "#22c55e" : "#f97316" }}>
+                {netKwh > 0 ? "+" : ""}{netKwh.toFixed(2)} <span style={{ fontSize: 14, fontWeight: 400 }}>kWh</span>
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 0.5 }}>
+                {isExporting ? "Credit: You have exported more than imported" : "Debit: You have imported more than exported"}
+              </Typography>
+            </Box>
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Live Meter Parameters
+            </Typography>
+            <Grid container spacing={2}>
+              {[
+                { label: "Active Power", val: currentPower, unit: "W", color: "#3b82f6" },
+                { label: "Reactive Power", val: reactivePower, unit: "VAR", color: "#f59e0b" },
+                { label: "Apparent Power", val: apparentPower, unit: "VA", color: "#ec4899" },
+                { label: "Power Factor", val: powerFactor, unit: "", color: "#10b981" },
+                { label: "Voltage", val: voltage, unit: "V", color: "#8b5cf6" },
+                { label: "Current", val: current, unit: "A", color: "#ef4444" },
+                { label: "Frequency", val: frequency, unit: "Hz", color: "#06b6d4" },
+              ].map((item, i) => (
+                <Grid item xs={6} sm={3} key={i}>
+                  <Box sx={{
+                    p: 2, borderRadius: 2, textAlign: "center",
+                    bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                    border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "#f1f5f9"}`,
+                  }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color, mx: "auto", mb: 1 }} />
+                    <Typography sx={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b", mb: 0.5 }}>{item.label}</Typography>
+                    <Typography sx={{ fontSize: 20, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a" }}>
+                      {item.val} <span style={{ fontSize: 10, fontWeight: 400, color: isDark ? "#64748b" : "#94a3b8" }}>{item.unit}</span>
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Hourly Frequency and Voltage
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={280} options={freqVoltOpts} series={freqSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Active Power
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={260} options={makeLineOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Reactive Power
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={260} options={makeLineOpts(["#f59e0b"], "VAR", (v) => v != null ? v.toFixed(1) + " VAR" : "N/A")} series={reactiveSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Apparent Power
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={260} options={makeLineOpts(["#ec4899"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={apparentSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Power Factor
+            </Typography>
+            {noData ? chartPlaceholder : (
+              <Chart type="line" height={260} options={{
+                ...makeLineOpts(["#10b981"], "", (v) => v != null ? v.toFixed(3) : "N/A"),
+                yaxis: {
+                  min: 0, max: 1,
+                  title: { text: "PF", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                  labels: {
+                    style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                    formatter: (v) => v != null ? v.toFixed(2) : "",
+                  },
+                },
+              }} series={pfSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={cardSx}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Recent Readings
+            </Typography>
+            <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
+              {history.slice(0, 20).map((h, i) => {
+                const impK = whToKwh(h.import_energy_wh);
+                const expK = whToKwh(h.export_energy_wh);
+                const netK = whToKwh(h.net_energy_wh);
+                return (
+                  <Box key={i} sx={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    py: 1.2, px: 1.5, borderRadius: 1.5, mb: 0.5,
+                    bgcolor: i % 2 === 0 ? (isDark ? "rgba(255,255,255,0.02)" : "#f8fafc") : "transparent",
+                  }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <AccessTimeRoundedIcon sx={{ fontSize: 14, color: isDark ? "#475569" : "#94a3b8" }} />
+                      <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", fontFamily: "monospace" }}>
+                        {formatTime(h.created_at)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Typography sx={{ fontSize: 12, color: "#f97316", fontWeight: 600 }}>
+                        {impK.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 10 }}>kWh</span>
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: "#22c55e", fontWeight: 600 }}>
+                        {expK.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 10 }}>kWh</span>
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: netK < 0 ? "#22c55e" : "#f97316", fontWeight: 600 }}>
+                        {netK > 0 ? "+" : ""}{netK.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              })}
+              {history.length === 0 && (
+                <Typography sx={{ textAlign: "center", py: 3, color: isDark ? "#475569" : "#94a3b8", fontSize: 13 }}>
+                  No readings available
+                </Typography>
+              )}
+            </Box>
+          </Paper>
+        </>
+      )}
+
+      {/* TAB 1: OVERVIEW */}
+      {tab === 1 && (
         <>
           <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 3, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
@@ -313,146 +655,6 @@ function NetMetering() {
         </>
       )}
 
-      {/* TAB 1: METER READINGS */}
-      {tab === 1 && (
-        <>
-          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 3, color: isDark ? "#e2e8f0" : "#1e293b", textAlign: "center" }}>
-              Current Meter Register Values
-            </Typography>
-
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Box sx={{
-                  p: 3, borderRadius: 3, textAlign: "center",
-                  bgcolor: isDark ? "rgba(249,115,22,0.06)" : "rgba(249,115,22,0.04)",
-                  border: `2px solid rgba(249,115,22,0.15)`,
-                }}>
-                  <TrendingDownRoundedIcon sx={{ fontSize: 40, color: "#f97316", mb: 1 }} />
-                  <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b", mb: 1, fontWeight: 500 }}>
-                    Import Register (Grid to Home)
-                  </Typography>
-                  <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f97316", lineHeight: 1.2 }}>
-                    {importKwh.toFixed(2)}
-                  </Typography>
-                  <Typography sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8", mt: 0.5 }}>kWh</Typography>
-                  <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#cbd5e1", mt: 1 }}>
-                    Raw: {parseFloat(latest?.import_energy_wh || 0).toFixed(0)} Wh
-                  </Typography>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Box sx={{
-                  p: 3, borderRadius: 3, textAlign: "center",
-                  bgcolor: isDark ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.04)",
-                  border: `2px solid rgba(34,197,94,0.15)`,
-                }}>
-                  <TrendingUpRoundedIcon sx={{ fontSize: 40, color: "#22c55e", mb: 1 }} />
-                  <Typography sx={{ fontSize: 13, color: isDark ? "#94a3b8" : "#64748b", mb: 1, fontWeight: 500 }}>
-                    Export Register (Home to Grid)
-                  </Typography>
-                  <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#22c55e", lineHeight: 1.2 }}>
-                    {exportKwh.toFixed(2)}
-                  </Typography>
-                  <Typography sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8", mt: 0.5 }}>kWh</Typography>
-                  <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#cbd5e1", mt: 1 }}>
-                    Raw: {parseFloat(latest?.export_energy_wh || 0).toFixed(0)} Wh
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-
-            <Box sx={{
-              mt: 3, p: 2.5, borderRadius: 2, textAlign: "center",
-              bgcolor: isExporting
-                ? (isDark ? "rgba(34,197,94,0.08)" : "rgba(34,197,94,0.05)")
-                : (isDark ? "rgba(249,115,22,0.08)" : "rgba(249,115,22,0.05)"),
-              border: `1px solid ${isExporting ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
-            }}>
-              <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", mb: 0.5 }}>Net Register Value</Typography>
-              <Typography sx={{ fontSize: 32, fontWeight: 800, color: isExporting ? "#22c55e" : "#f97316" }}>
-                {netKwh > 0 ? "+" : ""}{netKwh.toFixed(2)} <span style={{ fontSize: 14, fontWeight: 400 }}>kWh</span>
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 0.5 }}>
-                {isExporting ? "Credit: You have exported more than imported" : "Debit: You have imported more than exported"}
-              </Typography>
-            </Box>
-          </Paper>
-
-          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Live Meter Parameters
-            </Typography>
-            <Grid container spacing={2}>
-              {[
-                { label: "Active Power", val: currentPower, unit: "W", color: "#3b82f6" },
-                { label: "Voltage", val: voltage, unit: "V", color: "#8b5cf6" },
-                { label: "Current", val: current, unit: "A", color: "#ec4899" },
-                { label: "Frequency", val: frequency, unit: "Hz", color: "#06b6d4" },
-              ].map((item, i) => (
-                <Grid item xs={6} sm={3} key={i}>
-                  <Box sx={{
-                    p: 2, borderRadius: 2, textAlign: "center",
-                    bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                    border: `1px solid ${isDark ? "rgba(255,255,255,0.05)" : "#f1f5f9"}`,
-                  }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color, mx: "auto", mb: 1 }} />
-                    <Typography sx={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b", mb: 0.5 }}>{item.label}</Typography>
-                    <Typography sx={{ fontSize: 20, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a" }}>
-                      {item.val} <span style={{ fontSize: 10, fontWeight: 400, color: isDark ? "#64748b" : "#94a3b8" }}>{item.unit}</span>
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-
-          <Paper elevation={0} sx={cardSx}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Recent Readings
-            </Typography>
-            <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
-              {history.slice(0, 20).map((h, i) => {
-                const impK = whToKwh(h.import_energy_wh);
-                const expK = whToKwh(h.export_energy_wh);
-                const netK = whToKwh(h.net_energy_wh);
-                return (
-                  <Box key={i} sx={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    py: 1.2, px: 1.5, borderRadius: 1.5, mb: 0.5,
-                    bgcolor: i % 2 === 0 ? (isDark ? "rgba(255,255,255,0.02)" : "#f8fafc") : "transparent",
-                  }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeRoundedIcon sx={{ fontSize: 14, color: isDark ? "#475569" : "#94a3b8" }} />
-                      <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", fontFamily: "monospace" }}>
-                        {formatTime(h.created_at)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", gap: 2 }}>
-                      <Typography sx={{ fontSize: 12, color: "#f97316", fontWeight: 600 }}>
-                        {impK.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 10 }}>kWh</span>
-                      </Typography>
-                      <Typography sx={{ fontSize: 12, color: "#22c55e", fontWeight: 600 }}>
-                        {expK.toFixed(2)} <span style={{ fontWeight: 400, fontSize: 10 }}>kWh</span>
-                      </Typography>
-                      <Typography sx={{ fontSize: 12, color: netK < 0 ? "#22c55e" : "#f97316", fontWeight: 600 }}>
-                        {netK > 0 ? "+" : ""}{netK.toFixed(2)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                );
-              })}
-              {history.length === 0 && (
-                <Typography sx={{ textAlign: "center", py: 3, color: isDark ? "#475569" : "#94a3b8", fontSize: 13 }}>
-                  No readings available
-                </Typography>
-              )}
-            </Box>
-          </Paper>
-        </>
-      )}
-
       {/* TAB 2: DAILY HISTORY */}
       {tab === 2 && (
         <>
@@ -484,7 +686,6 @@ function NetMetering() {
                   </Paper>
                 </Grid>
               </Grid>
-
               <Paper elevation={0} sx={cardSx}>
                 <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
                   Daily Import / Export (Last {dailyData.days} Days)

@@ -101,17 +101,23 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
         {navItems.map((item, idx) => {
           if (item.divider) return <Divider key={idx} sx={{ my: 1.5, borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)" }} />;
           const isActive = location.pathname === item.path;
+          const isDisabled = item.disabled;
           return (
             <ListItem key={item.path} disablePadding sx={{ mb: 0.3 }}>
               <ListItemButton
-                component={RouterLink}
-                to={item.path}
-                onClick={() => mobileOpen && handleDrawerToggle()}
+                component={isDisabled ? "div" : RouterLink}
+                to={isDisabled ? undefined : item.path}
+                onClick={(e) => {
+                  if (isDisabled) { e.preventDefault(); return; }
+                  if (mobileOpen) handleDrawerToggle();
+                }}
                 sx={{
                   borderRadius: 2, py: 1, px: 1.5,
                   bgcolor: isActive ? activeBg : "transparent",
-                  "&:hover": { bgcolor: isActive ? activeBg : hoverBg },
+                  "&:hover": { bgcolor: isDisabled ? "transparent" : (isActive ? activeBg : hoverBg) },
                   transition: "all 0.15s ease",
+                  opacity: isDisabled ? 0.45 : 1,
+                  cursor: isDisabled ? "default" : "pointer",
                 }}
               >
                 <ListItemIcon sx={{
