@@ -613,41 +613,52 @@ function Dashboard() {
             </Grid>
 
             {/* HOURLY IMPORT/EXPORT BAR CHART */}
-            {hourlyRows.length > 0 && (
-              <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
-                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
-                  Hourly Import vs Export
-                </Typography>
-                <Chart
-                  type="bar" height={300}
-                  options={{
-                    chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
-                    colors: ["#f97316", "#22c55e"],
-                    plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
-                    xaxis: {
-                      categories: hourlyRows.map(r => r.hour),
-                      labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" }, rotate: -45 },
-                      axisBorder: { show: false }, axisTicks: { show: false },
-                    },
-                    yaxis: {
-                      labels: {
-                        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
-                        formatter: (v) => v.toFixed(3),
+            {(() => {
+              const all24 = Array.from({ length: 24 }, (_, i) => {
+                const label = `${String(i).padStart(2, "0")}:00`;
+                const h = netHourly?.hourly?.find(r => r.hour === i);
+                return {
+                  label,
+                  importKwh: h ? h.import / 1000 : 0,
+                  exportKwh: h ? h.export / 1000 : 0,
+                };
+              });
+              return (
+                <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
+                    Hourly Import vs Export
+                  </Typography>
+                  <Chart
+                    type="bar" height={300}
+                    options={{
+                      chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+                      colors: ["#f97316", "#22c55e"],
+                      plotOptions: { bar: { borderRadius: 3, columnWidth: "60%" } },
+                      xaxis: {
+                        categories: all24.map(r => r.label),
+                        labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
+                        axisBorder: { show: false }, axisTicks: { show: false },
                       },
-                      title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
-                    },
-                    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-                    tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
-                    dataLabels: { enabled: false },
-                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
-                  }}
-                  series={[
-                    { name: "Imported (kWh)", data: hourlyRows.map(r => parseFloat(r.importKwh.toFixed(3))) },
-                    { name: "Exported (kWh)", data: hourlyRows.map(r => parseFloat(r.exportKwh.toFixed(3))) },
-                  ]}
-                />
-              </Paper>
-            )}
+                      yaxis: {
+                        labels: {
+                          style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                          formatter: (v) => v.toFixed(3),
+                        },
+                        title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                      },
+                      grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+                      tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
+                      dataLabels: { enabled: false },
+                      legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                    }}
+                    series={[
+                      { name: "Imported (kWh)", data: all24.map(r => parseFloat(r.importKwh.toFixed(3))) },
+                      { name: "Exported (kWh)", data: all24.map(r => parseFloat(r.exportKwh.toFixed(3))) },
+                    ]}
+                  />
+                </Paper>
+              );
+            })()}
 
             {/* TODAY'S HOURLY IMPORT/EXPORT COST */}
             <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
