@@ -334,21 +334,26 @@ function Dashboard() {
     ? hourlyData.reduce((sum, h) => sum + (parseFloat(h.kWh) || 0), 0).toFixed(2)
     : (averageUnitsData || "0");
 
-  const chartData = Array.isArray(hourlyData)
-    ? hourlyData.filter(d => (parseFloat(d.kWh) || 0) > 0).map(d => ({
-        x: d.hour || d.Hour || "",
-        y: parseFloat(d.kWh || d.energy || d.Energy || 0),
-      }))
-    : [];
+  const hourlyMap = {};
+  if (Array.isArray(hourlyData)) {
+    hourlyData.forEach(d => {
+      const h = d.hour || d.Hour || "";
+      hourlyMap[h] = parseFloat(d.kWh || d.energy || d.Energy || 0);
+    });
+  }
+  const chartData = Array.from({ length: 24 }, (_, i) => {
+    const label = `${String(i).padStart(2, "0")}:00`;
+    return { x: label, y: hourlyMap[label] || hourlyMap[i] || hourlyMap[String(i)] || 0 };
+  });
 
   const chartOpts = {
-    chart: { type: "area", toolbar: { show: false }, sparkline: { enabled: false }, background: "transparent" },
-    stroke: { curve: "smooth", width: 2 },
-    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05 } },
+    chart: { type: "line", toolbar: { show: false }, background: "transparent" },
+    stroke: { curve: "smooth", width: 2.5 },
     colors: ["#3b82f6"],
+    markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
     xaxis: {
       categories: chartData.map(d => d.x),
-      labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
+      labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
       axisBorder: { show: false }, axisTicks: { show: false },
     },
     yaxis: {
@@ -356,6 +361,7 @@ function Dashboard() {
         style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
         formatter: (v) => v.toFixed(2),
       },
+      title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
     },
     grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
     tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
@@ -431,13 +437,7 @@ function Dashboard() {
             <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
               Energy Consumption (Today)
             </Typography>
-            {chartData.length > 0 ? (
-              <Chart type="area" height={220} options={chartOpts} series={[{ name: "kWh", data: chartData.map(d => d.y) }]} />
-            ) : (
-              <Box sx={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>No consumption data yet today</Typography>
-              </Box>
-            )}
+            <Chart type="line" height={220} options={chartOpts} series={[{ name: "kWh", data: chartData.map(d => d.y) }]} />
           </Paper>
         </Grid>
 
