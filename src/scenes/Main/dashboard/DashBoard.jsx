@@ -612,6 +612,43 @@ function Dashboard() {
               </Grid>
             </Grid>
 
+            {/* HOURLY IMPORT/EXPORT BAR CHART */}
+            {hourlyRows.length > 0 && (
+              <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
+                  Hourly Import vs Export
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+                    colors: ["#f97316", "#22c55e"],
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                    xaxis: {
+                      categories: hourlyRows.map(r => r.hour),
+                      labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" }, rotate: -45 },
+                      axisBorder: { show: false }, axisTicks: { show: false },
+                    },
+                    yaxis: {
+                      labels: {
+                        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                        formatter: (v) => v.toFixed(3),
+                      },
+                      title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                    },
+                    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+                    tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
+                    dataLabels: { enabled: false },
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: "Imported (kWh)", data: hourlyRows.map(r => parseFloat(r.importKwh.toFixed(3))) },
+                    { name: "Exported (kWh)", data: hourlyRows.map(r => parseFloat(r.exportKwh.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+            )}
+
             {/* TODAY'S HOURLY IMPORT/EXPORT COST */}
             <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
               <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
