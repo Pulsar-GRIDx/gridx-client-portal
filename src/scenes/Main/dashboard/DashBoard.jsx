@@ -677,43 +677,32 @@ function Dashboard() {
           const now = new Date();
           const thisMonth = now.getMonth();
           const thisYear = now.getFullYear();
-
-          const actualRows = actualDaily?.history || [];
-          const hasActualDaily = actualRows.some(r => {
-            const d = new Date(r.date);
-            return d.getMonth() === thisMonth && d.getFullYear() === thisYear && (r.import_wh > 0 || r.export_wh > 0);
+          const todayStr = now.toISOString().split("T")[0];
+          const zero = { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 };
+          const addEntry = (acc, ik, ek) => ({
+            importKwh: acc.importKwh + ik,
+            importCost: acc.importCost + ik * IMPORT_RATE,
+            exportKwh: acc.exportKwh + ek,
+            exportCost: acc.exportCost + ek * EXPORT_RATE,
+            netCost: acc.netCost + (ik * IMPORT_RATE - ek * EXPORT_RATE),
           });
 
-          if (hasActualDaily) {
-            return actualRows
-              .filter(r => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
-              .reduce((acc, r) => {
-                const ik = (r.import_wh || 0) / 1000;
-                const ek = (r.export_wh || 0) / 1000;
-                return {
-                  importKwh: acc.importKwh + ik,
-                  importCost: acc.importCost + ik * IMPORT_RATE,
-                  exportKwh: acc.exportKwh + ek,
-                  exportCost: acc.exportCost + ek * EXPORT_RATE,
-                  netCost: acc.netCost + (ik * IMPORT_RATE - ek * EXPORT_RATE),
-                };
-              }, { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
-          }
+          const actualRows = actualDaily?.history || [];
+          const netRows = netDaily?.history || [];
+          const inMonth = (r) => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; };
+          const isToday = (r) => r.date === todayStr || new Date(r.date).toISOString().split("T")[0] === todayStr;
 
-          const rows = netDaily?.history || [];
-          return rows
-            .filter(r => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
-            .reduce((acc, r) => {
-              const ik = r.import / 1000;
-              const ek = r.export / 1000;
-              return {
-                importKwh: acc.importKwh + ik,
-                importCost: acc.importCost + ik * IMPORT_RATE,
-                exportKwh: acc.exportKwh + ek,
-                exportCost: acc.exportCost + ek * EXPORT_RATE,
-                netCost: acc.netCost + (ik * IMPORT_RATE - ek * EXPORT_RATE),
-              };
-            }, { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
+          const actualDates = new Set(actualRows.filter(r => inMonth(r) && !isToday(r)).map(r => new Date(r.date).toISOString().split("T")[0]));
+
+          let pastDays = actualRows
+            .filter(r => inMonth(r) && !isToday(r))
+            .reduce((acc, r) => addEntry(acc, (r.import_wh || 0) / 1000, (r.export_wh || 0) / 1000), { ...zero });
+
+          netRows
+            .filter(r => inMonth(r) && !isToday(r) && !actualDates.has(new Date(r.date).toISOString().split("T")[0]))
+            .forEach(r => { pastDays = addEntry(pastDays, (r.import || 0) / 1000, (r.export || 0) / 1000); });
+
+          return addEntry(pastDays, dayTotals.importKwh, dayTotals.exportKwh);
         })();
 
         return (
