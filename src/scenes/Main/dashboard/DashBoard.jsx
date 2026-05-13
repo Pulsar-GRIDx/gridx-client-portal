@@ -399,7 +399,7 @@ function Dashboard() {
     chart: { type: "line", toolbar: { show: false }, background: "transparent" },
     stroke: { curve: "smooth", width: 2.5 },
     colors: ["#3b82f6"],
-    markers: { size: 0, hover: { size: 5 } },
+    markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
     fill: {
       type: "gradient",
       gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.05, stops: [0, 90, 100] },
