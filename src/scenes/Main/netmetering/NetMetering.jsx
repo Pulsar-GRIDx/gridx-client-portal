@@ -247,6 +247,7 @@ function NetMetering() {
   const netKwh = whToKwh(latest?.net_energy_wh);
   const currentPowerRaw = parseFloat(powerInfo?.active_power || 0);
   const isExporting = currentPowerRaw < 0;
+  const isNetExporter = netKwh < 0;
 
   const currentPower = currentPowerRaw.toFixed(1);
   const voltage = parseFloat(powerInfo?.voltage || 0).toFixed(1);
@@ -501,17 +502,17 @@ function NetMetering() {
             </Grid>
             <Box sx={{
               mt: 3, p: 2.5, borderRadius: 2, textAlign: "center",
-              bgcolor: isExporting
+              bgcolor: isNetExporter
                 ? (isDark ? "rgba(34,197,94,0.08)" : "rgba(34,197,94,0.05)")
                 : (isDark ? "rgba(249,115,22,0.08)" : "rgba(249,115,22,0.05)"),
-              border: `1px solid ${isExporting ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+              border: `1px solid ${isNetExporter ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
             }}>
               <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", mb: 0.5 }}>Net Register Value</Typography>
-              <Typography sx={{ fontSize: 32, fontWeight: 800, color: isExporting ? "#22c55e" : "#f97316" }}>
+              <Typography sx={{ fontSize: 32, fontWeight: 800, color: isNetExporter ? "#22c55e" : "#f97316" }}>
                 {netKwh > 0 ? "+" : ""}{netKwh.toFixed(2)} <span style={{ fontSize: 14, fontWeight: 400 }}>kWh</span>
               </Typography>
               <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mt: 0.5 }}>
-                {isExporting ? "Credit: You have exported more than imported" : "Debit: You have imported more than exported"}
+                {isNetExporter ? "Credit: You have exported more than imported" : "Debit: You have imported more than exported"}
               </Typography>
             </Box>
           </Paper>
@@ -924,6 +925,53 @@ function NetMetering() {
                   series={[
                     { name: `${new Date().getFullYear()}`, data: monthlyNetData.thisYear.export.map(v => parseFloat(v.toFixed(3))) },
                     { name: `${new Date().getFullYear() - 1}`, data: monthlyNetData.lastYear.export.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+
+              <Paper elevation={0} sx={{ ...cardSx, mt: 3 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  Monthly Import vs Export (kWh) - {new Date().getFullYear()}
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(monthlyNetData.monthNames),
+                    colors: ["#f97316", "#22c55e"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                  }}
+                  series={[
+                    { name: "Imported (kWh)", data: monthlyNetData.thisYear.import.map(v => parseFloat(v.toFixed(3))) },
+                    { name: "Exported (kWh)", data: monthlyNetData.thisYear.export.map(v => parseFloat(v.toFixed(3))) },
+                  ]}
+                />
+              </Paper>
+
+              <Paper elevation={0} sx={{ ...cardSx, mt: 3 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                  Monthly Import vs Export Cost (N$) - {new Date().getFullYear()}
+                </Typography>
+                <Typography sx={{ fontSize: 11, color: isDark ? "#475569" : "#94a3b8", mb: 2, mt: -1 }}>
+                  Import Rate: N$ 2.45/kWh | Export Rate: N$ 1.60/kWh
+                </Typography>
+                <Chart
+                  type="bar" height={300}
+                  options={{
+                    ...makeBarChartOpts(monthlyNetData.monthNames),
+                    colors: ["#f97316", "#22c55e"],
+                    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                    yaxis: {
+                      labels: {
+                        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                        formatter: (v) => "N$ " + v.toFixed(2),
+                      },
+                      title: { text: "N$", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                    },
+                    tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => "N$ " + v.toFixed(2) } },
+                  }}
+                  series={[
+                    { name: "Import Cost (N$)", data: monthlyNetData.thisYear.import.map(v => parseFloat((v * 2.45).toFixed(2))) },
+                    { name: "Export Credit (N$)", data: monthlyNetData.thisYear.export.map(v => parseFloat((v * 1.60).toFixed(2))) },
                   ]}
                 />
               </Paper>
