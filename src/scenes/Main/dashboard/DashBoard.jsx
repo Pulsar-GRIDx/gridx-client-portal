@@ -396,17 +396,13 @@ function Dashboard() {
   })();
 
   const chartOpts = {
-    chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
-    plotOptions: {
-      bar: {
-        borderRadius: 3,
-        colors: {
-          ranges: [
-            { from: -100000, to: 0, color: "#22c55e" },
-            { from: 0, to: 100000, color: "#f97316" },
-          ],
-        },
-      },
+    chart: { type: "line", toolbar: { show: false }, background: "transparent" },
+    stroke: { curve: "smooth", width: 2.5 },
+    colors: ["#3b82f6"],
+    markers: { size: 0, hover: { size: 5 } },
+    fill: {
+      type: "gradient",
+      gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.05, stops: [0, 90, 100] },
     },
     xaxis: {
       categories: chartData.map(d => d.x),
@@ -522,7 +518,7 @@ function Dashboard() {
                 <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b" }}>Export (to grid)</Typography>
               </Box>
             </Box>
-            <Chart type="bar" height={220} options={chartOpts} series={[{ name: "Net Energy", data: chartData.map(d => d.y) }]} />
+            <Chart type="area" height={220} options={chartOpts} series={[{ name: "Net Energy", data: chartData.map(d => d.y) }]} />
           </Paper>
         </Grid>
 
