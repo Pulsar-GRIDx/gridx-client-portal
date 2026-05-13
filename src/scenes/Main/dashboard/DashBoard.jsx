@@ -350,7 +350,12 @@ function Dashboard() {
 
   const todayUsage = (() => {
     if (hasActual) {
-      return (actualHourly.total_active_wh / 1000).toFixed(2);
+      const net = (actualHourly.total_import_wh - actualHourly.total_export_wh) / 1000;
+      return net.toFixed(2);
+    }
+    if (netHourly?.hourly) {
+      const net = netHourly.hourly.reduce((sum, h) => sum + ((h.import || 0) - (h.export || 0)), 0) / 1000;
+      return net.toFixed(2);
     }
     return Array.isArray(hourlyData)
       ? hourlyData.reduce((sum, h) => sum + (parseFloat(h.kWh) || 0), 0).toFixed(2)
@@ -361,7 +366,12 @@ function Dashboard() {
   if (hasActual) {
     actualHourly.hourly.forEach(h => {
       const label = `${String(h.hour).padStart(2, "0")}:00`;
-      hourlyMap[label] = h.active_wh / 1000;
+      hourlyMap[label] = (h.import_wh - h.export_wh) / 1000;
+    });
+  } else if (netHourly?.hourly) {
+    netHourly.hourly.forEach(h => {
+      const label = `${String(h.hour).padStart(2, "0")}:00`;
+      hourlyMap[label] = ((h.import || 0) - (h.export || 0)) / 1000;
     });
   } else if (Array.isArray(hourlyData)) {
     hourlyData.forEach(d => {
@@ -386,10 +396,18 @@ function Dashboard() {
   })();
 
   const chartOpts = {
-    chart: { type: "line", toolbar: { show: false }, background: "transparent" },
-    stroke: { curve: "smooth", width: 2.5 },
-    colors: ["#3b82f6"],
-    markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
+    chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+    plotOptions: {
+      bar: {
+        borderRadius: 3,
+        colors: {
+          ranges: [
+            { from: -100000, to: 0, color: "#22c55e" },
+            { from: 0, to: 100000, color: "#f97316" },
+          ],
+        },
+      },
+    },
     xaxis: {
       categories: chartData.map(d => d.x),
       labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
@@ -403,7 +421,10 @@ function Dashboard() {
       title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
     },
     grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-    tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      y: { formatter: (v) => `${v >= 0 ? "Import" : "Export"}: ${Math.abs(v).toFixed(3)} kWh` },
+    },
     dataLabels: { enabled: false },
   };
 
@@ -491,7 +512,17 @@ function Dashboard() {
                 }}
               />
             </Box>
-            <Chart type="line" height={220} options={chartOpts} series={[{ name: "kWh", data: chartData.map(d => d.y) }]} />
+            <Box sx={{ display: "flex", gap: 2, mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#f97316" }} />
+                <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b" }}>Import (from grid)</Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#22c55e" }} />
+                <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b" }}>Export (to grid)</Typography>
+              </Box>
+            </Box>
+            <Chart type="bar" height={220} options={chartOpts} series={[{ name: "Net Energy", data: chartData.map(d => d.y) }]} />
           </Paper>
         </Grid>
 
