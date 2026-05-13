@@ -740,6 +740,7 @@ function Dashboard() {
                     <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>
                       {(importWh / 1000).toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
                     </Typography>
+                    <Typography sx={{ fontSize: 9, color: subColor, mt: 0.3 }}>Lifetime</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={4}>
@@ -748,6 +749,7 @@ function Dashboard() {
                     <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#3b82f6" }}>
                       {lp.toFixed(1)} <span style={{ fontSize: 10, fontWeight: 400 }}>W</span>
                     </Typography>
+                    <Typography sx={{ fontSize: 9, color: subColor, mt: 0.3 }}>Live</Typography>
                   </Box>
                 </Grid>
                 <Grid item xs={4}>
@@ -756,9 +758,13 @@ function Dashboard() {
                     <Typography sx={{ fontSize: 18, fontWeight: 700, color: "#22c55e" }}>
                       {(exportWh / 1000).toFixed(2)} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
                     </Typography>
+                    <Typography sx={{ fontSize: 9, color: subColor, mt: 0.3 }}>Lifetime</Typography>
                   </Box>
                 </Grid>
               </Grid>
+              <Typography sx={{ fontSize: 10, color: subColor, mt: 1.5, textAlign: "center", fontStyle: "italic" }}>
+                Imported and Exported values are cumulative totals from the meter registers (all-time)
+              </Typography>
             </Paper>
 
             {/* TODAY & THIS MONTH SUMMARY CARDS WITH DONUT CHARTS */}
