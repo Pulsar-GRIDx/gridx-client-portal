@@ -112,6 +112,11 @@ export const netMeteringAPI = {
   getDaily: (drn, days = 30) => get(`/mqtt/net-energy/${drn}/daily?days=${days}`),
 };
 
+export const actualEnergyAPI = {
+  getHourly: (drn, date) => get(`/mqtt/actual-energy/${drn}/hourly${date ? '?date=' + date : ''}`),
+  getDaily: (drn, days = 30) => get(`/mqtt/actual-energy/${drn}/daily?days=${days}`),
+};
+
 export const mqttAPI = {
   sendToken: (drn, token) => post(`/mqtt/command/${drn}`, { command: "send_token", token }),
   creditTransfer: (drn, data) => post(`/mqtt/credit-transfer/${drn}`, data),
@@ -123,4 +128,4 @@ export const meterHealthAPI = {
   getHistory: (drn, limit = 72) => get(`/mqtt/meter-health/${drn}/history?limit=${limit}`),
 };
 
-export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, mqtt: mqttAPI, health: meterHealthAPI, API_BASE };
+export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, actualEnergy: actualEnergyAPI, mqtt: mqttAPI, health: meterHealthAPI, API_BASE };

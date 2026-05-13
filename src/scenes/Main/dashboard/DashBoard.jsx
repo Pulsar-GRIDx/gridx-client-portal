@@ -5,7 +5,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { useData } from "../Data/getData";
 import AuthContext from "../../../context/AuthContext";
-import { meterDataAPI, vendingAPI, meterHealthAPI, netMeteringAPI } from "../../../services/api";
+import { meterDataAPI, vendingAPI, meterHealthAPI, netMeteringAPI, actualEnergyAPI } from "../../../services/api";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import ThermostatRoundedIcon from "@mui/icons-material/ThermostatRounded";
 import PowerRoundedIcon from "@mui/icons-material/PowerRounded";
@@ -142,16 +142,7 @@ function EnergySummaryCard({ title, totals, isDark }) {
       pie: {
         donut: {
           size: "72%",
-          labels: {
-            show: true,
-            name: { show: true, fontSize: "11px", color: subColor, offsetY: -4 },
-            value: { show: true, fontSize: "18px", fontWeight: 700, color: headerColor, offsetY: 4, formatter: () => `N$ ${Math.abs(totals.netCost).toFixed(2)}` },
-            total: {
-              show: true, label: isCredit ? "Credit" : "Net Cost",
-              fontSize: "10px", color: isCredit ? "#22c55e" : "#f97316",
-              formatter: () => `N$ ${Math.abs(totals.netCost).toFixed(2)}`,
-            },
-          },
+          labels: { show: false },
         },
       },
     },
@@ -165,6 +156,7 @@ function EnergySummaryCard({ title, totals, isDark }) {
   };
 
   const donutSeries = hasData ? [totals.importKwh, totals.exportKwh] : [0.001, 0.001];
+  const netCostColor = isCredit ? "#22c55e" : "#f97316";
 
   return (
     <Paper elevation={0} sx={{
@@ -172,12 +164,27 @@ function EnergySummaryCard({ title, totals, isDark }) {
       bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
       border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
     }}>
-      <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 1, color: headerColor, textAlign: "center" }}>
-        {title}
+      <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 0.3, color: headerColor, textAlign: "center" }}>
+        {title} — Energy Summary
       </Typography>
+      <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 1 }}>
+        <Typography sx={{ fontSize: 10, color: "#f97316" }}>Import: N$ {IMPORT_RATE.toFixed(2)}/kWh</Typography>
+        <Typography sx={{ fontSize: 10, color: "#22c55e" }}>Export: N$ {EXPORT_RATE.toFixed(2)}/kWh</Typography>
+      </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 1, position: "relative" }}>
         <Chart type="donut" width={200} height={200} options={donutOpts} series={donutSeries} />
+        <Box sx={{
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          textAlign: "center", pointerEvents: "none",
+        }}>
+          <Typography sx={{ fontSize: 10, color: netCostColor, lineHeight: 1.2 }}>
+            {isCredit ? "Credit" : "Net Cost"}
+          </Typography>
+          <Typography sx={{ fontSize: 18, fontWeight: 700, color: headerColor, lineHeight: 1.2 }}>
+            N$ {Math.abs(totals.netCost).toFixed(2)}
+          </Typography>
+        </Box>
       </Box>
 
       <Box sx={{
@@ -295,6 +302,9 @@ function Dashboard() {
   const [netHourly, setNetHourly] = useState(null);
   const [netDaily, setNetDaily] = useState(null);
   const [livePower, setLivePower] = useState(null);
+  const [actualHourly, setActualHourly] = useState(null);
+  const [actualDaily, setActualDaily] = useState(null);
+  const [energySource, setEnergySource] = useState("estimated");
   const pollRef = useRef(null);
 
   useEffect(() => {
@@ -306,6 +316,12 @@ function Dashboard() {
     netMeteringAPI.getHourly(drn).then(d => setNetHourly(d?.data || d)).catch(() => {});
     netMeteringAPI.getDaily(drn, 400).then(d => setNetDaily(d?.data || d)).catch(() => {});
     meterDataAPI.getPower(drn).then(d => setLivePower(d)).catch(() => {});
+    actualEnergyAPI.getHourly(drn).then(d => {
+      const data = d?.data || d;
+      setActualHourly(data);
+      if (data?.hourly?.some(h => h.active_wh > 0)) setEnergySource("measured");
+    }).catch(() => {});
+    actualEnergyAPI.getDaily(drn, 400).then(d => setActualDaily(d?.data || d)).catch(() => {});
   }, [drn]);
 
   useEffect(() => {
@@ -330,12 +346,24 @@ function Dashboard() {
   const mainsState = String(loadData?.mains_state) === "1";
   const geyserState = String(loadData?.geyser_state) === "1";
 
-  const todayUsage = Array.isArray(hourlyData)
-    ? hourlyData.reduce((sum, h) => sum + (parseFloat(h.kWh) || 0), 0).toFixed(2)
-    : (averageUnitsData || "0");
+  const hasActual = actualHourly?.hourly?.some(h => h.active_wh > 0);
+
+  const todayUsage = (() => {
+    if (hasActual) {
+      return (actualHourly.total_active_wh / 1000).toFixed(2);
+    }
+    return Array.isArray(hourlyData)
+      ? hourlyData.reduce((sum, h) => sum + (parseFloat(h.kWh) || 0), 0).toFixed(2)
+      : (averageUnitsData || "0");
+  })();
 
   const hourlyMap = {};
-  if (Array.isArray(hourlyData)) {
+  if (hasActual) {
+    actualHourly.hourly.forEach(h => {
+      const label = `${String(h.hour).padStart(2, "0")}:00`;
+      hourlyMap[label] = h.active_wh / 1000;
+    });
+  } else if (Array.isArray(hourlyData)) {
     hourlyData.forEach(d => {
       const h = d.hour || d.Hour || "";
       hourlyMap[h] = parseFloat(d.kWh || d.energy || d.Energy || 0);
@@ -345,6 +373,17 @@ function Dashboard() {
     const label = `${String(i).padStart(2, "0")}:00`;
     return { x: label, y: hourlyMap[label] || hourlyMap[i] || hourlyMap[String(i)] || 0 };
   });
+
+  const todayImportKwh = (() => {
+    if (hasActual) return actualHourly.total_import_wh / 1000;
+    if (!netHourly?.hourly) return 0;
+    return netHourly.hourly.reduce((sum, h) => sum + (h.import || 0), 0) / 1000;
+  })();
+  const todayExportKwh = (() => {
+    if (hasActual) return actualHourly.total_export_wh / 1000;
+    if (!netHourly?.hourly) return 0;
+    return netHourly.hourly.reduce((sum, h) => sum + (h.export || 0), 0) / 1000;
+  })();
 
   const chartOpts = {
     chart: { type: "line", toolbar: { show: false }, background: "transparent" },
@@ -413,17 +452,20 @@ function Dashboard() {
       </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={4}>
           <StatCard title="Meter Units" value={unitsData || "0"} unit="kWh" icon={<ElectricMeterRoundedIcon />} color="#3b82f6" isDark={isDark} />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
-          <StatCard title="Today's Usage" value={todayUsage} unit="kWh" icon={<TrendingUpRoundedIcon />} color="#f97316" isDark={isDark} />
+        <Grid item xs={6} sm={6} md={4}>
+          <StatCard title="Today's Net Usage" value={todayUsage} unit="kWh" icon={<BoltRoundedIcon />} color="#f97316" isDark={isDark} />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
+        <Grid item xs={6} sm={6} md={4}>
           <StatCard title="Current Power" value={power} unit="W" icon={<BatteryChargingFullRoundedIcon />} color="#10b981" isDark={isDark} />
         </Grid>
-        <Grid item xs={6} sm={6} md={3}>
-          <StatCard title="Voltage" value={voltage} unit="V" icon={<BoltRoundedIcon />} color="#8b5cf6" isDark={isDark} />
+        <Grid item xs={6} sm={6} md={6}>
+          <StatCard title="Today's Import" value={todayImportKwh.toFixed(3)} unit="kWh" icon={<TrendingDownRoundedIcon />} color="#f97316" subtitle={`Cost: N$ ${(todayImportKwh * IMPORT_RATE).toFixed(2)}`} isDark={isDark} />
+        </Grid>
+        <Grid item xs={6} sm={6} md={6}>
+          <StatCard title="Today's Export" value={todayExportKwh.toFixed(3)} unit="kWh" icon={<TrendingUpRoundedIcon />} color="#22c55e" subtitle={`Credit: N$ ${(todayExportKwh * EXPORT_RATE).toFixed(2)}`} isDark={isDark} />
         </Grid>
       </Grid>
 
@@ -434,9 +476,21 @@ function Dashboard() {
             bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
           }}>
-            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-              Energy Consumption (Today)
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                Energy Consumption (Today)
+              </Typography>
+              <Chip
+                size="small"
+                label={hasActual ? "Measured" : "Estimated"}
+                sx={{
+                  fontSize: 9, fontWeight: 600, height: 20,
+                  bgcolor: hasActual ? "rgba(34,197,94,0.1)" : "rgba(249,115,22,0.1)",
+                  color: hasActual ? "#22c55e" : "#f97316",
+                  border: `1px solid ${hasActual ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+                }}
+              />
+            </Box>
             <Chart type="line" height={220} options={chartOpts} series={[{ name: "kWh", data: chartData.map(d => d.y) }]} />
           </Paper>
         </Grid>
@@ -477,6 +531,72 @@ function Dashboard() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* TOTAL HOME CONSUMPTION LINE CHART */}
+      {(() => {
+        const totalConsData = Array.from({ length: 24 }, (_, i) => {
+          const label = `${String(i).padStart(2, "0")}:00`;
+          if (hasActual) {
+            const ah = actualHourly.hourly.find(r => r.hour === i);
+            return { x: label, y: ah ? parseFloat((ah.active_wh / 1000).toFixed(3)) : 0 };
+          }
+          const regularKwh = hourlyMap[label] || hourlyMap[i] || hourlyMap[String(i)] || 0;
+          const netHour = netHourly?.hourly?.find(r => r.hour === i);
+          const importKwh = netHour ? netHour.import / 1000 : 0;
+          const exportKwh = netHour ? netHour.export / 1000 : 0;
+          const solarSelf = Math.max(0, regularKwh - importKwh);
+          const total = importKwh + solarSelf + (exportKwh > 0 && regularKwh === 0 ? exportKwh * 0.5 : 0);
+          return { x: label, y: parseFloat(Math.max(regularKwh, total).toFixed(3)) };
+        });
+        const totalConsOpts = {
+          chart: { type: "line", toolbar: { show: false }, background: "transparent" },
+          stroke: { curve: "smooth", width: 2.5 },
+          colors: ["#8b5cf6"],
+          markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
+          xaxis: {
+            categories: totalConsData.map(d => d.x),
+            labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
+            axisBorder: { show: false }, axisTicks: { show: false },
+          },
+          yaxis: {
+            labels: {
+              style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+              formatter: (v) => v.toFixed(2),
+            },
+            title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+          },
+          grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+          tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
+          dataLabels: { enabled: false },
+        };
+        return (
+          <Paper elevation={0} sx={{
+            p: 2.5, borderRadius: 3, mb: 3,
+            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
+            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+                Total Home Consumption (Today)
+              </Typography>
+              <Chip
+                size="small"
+                label={hasActual ? "Measured" : "Estimated"}
+                sx={{
+                  fontSize: 9, fontWeight: 600, height: 20,
+                  bgcolor: hasActual ? "rgba(34,197,94,0.1)" : "rgba(249,115,22,0.1)",
+                  color: hasActual ? "#22c55e" : "#f97316",
+                  border: `1px solid ${hasActual ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+                }}
+              />
+            </Box>
+            <Typography sx={{ fontSize: 11, color: isDark ? "#64748b" : "#94a3b8", mb: 1, mt: -1 }}>
+              {hasActual ? "Actual measured energy from meter registers" : "Combined energy from grid and solar — total load on the home"}
+            </Typography>
+            <Chart type="line" height={220} options={totalConsOpts} series={[{ name: "Total kWh", data: totalConsData.map(d => d.y) }]} />
+          </Paper>
+        );
+      })()}
 
       {/* LIVE POWER FLOW */}
       {(() => {
@@ -523,10 +643,33 @@ function Dashboard() {
         }), { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
 
         const monthTotals = (() => {
-          const rows = netDaily?.history || [];
           const now = new Date();
           const thisMonth = now.getMonth();
           const thisYear = now.getFullYear();
+
+          const actualRows = actualDaily?.history || [];
+          const hasActualDaily = actualRows.some(r => {
+            const d = new Date(r.date);
+            return d.getMonth() === thisMonth && d.getFullYear() === thisYear && (r.import_wh > 0 || r.export_wh > 0);
+          });
+
+          if (hasActualDaily) {
+            return actualRows
+              .filter(r => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+              .reduce((acc, r) => {
+                const ik = (r.import_wh || 0) / 1000;
+                const ek = (r.export_wh || 0) / 1000;
+                return {
+                  importKwh: acc.importKwh + ik,
+                  importCost: acc.importCost + ik * IMPORT_RATE,
+                  exportKwh: acc.exportKwh + ek,
+                  exportCost: acc.exportCost + ek * EXPORT_RATE,
+                  netCost: acc.netCost + (ik * IMPORT_RATE - ek * EXPORT_RATE),
+                };
+              }, { importKwh: 0, importCost: 0, exportKwh: 0, exportCost: 0, netCost: 0 });
+          }
+
+          const rows = netDaily?.history || [];
           return rows
             .filter(r => { const d = new Date(r.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
             .reduce((acc, r) => {
@@ -662,9 +805,15 @@ function Dashboard() {
 
             {/* TODAY'S HOURLY IMPORT/EXPORT COST */}
             <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
-              <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
-                Today's Hourly Breakdown
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", mb: 2, gap: 1 }}>
+                <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColor }}>
+                  Today's Hourly Breakdown
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <Chip size="small" label={`Import Rate: N$ ${IMPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.2)" }} />
+                  <Chip size="small" label={`Export Rate: N$ ${EXPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }} />
+                </Box>
+              </Box>
               <Box sx={{ overflowX: "auto" }}>
                 <Box component="table" sx={{
                   width: "100%", borderCollapse: "collapse", fontSize: 12,
