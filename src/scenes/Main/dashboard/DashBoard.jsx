@@ -125,7 +125,7 @@ function PowerFlowAnimation({ activePower, isDark }) {
   );
 }
 
-function EnergySummaryCard({ title, totals, isDark }) {
+function EnergySummaryCard({ title, subtitle, totals, isDark }) {
   const subColor = isDark ? "#94a3b8" : "#64748b";
   const headerColor = isDark ? "#e2e8f0" : "#1e293b";
   const hasData = totals.importKwh > 0 || totals.exportKwh > 0;
@@ -160,13 +160,27 @@ function EnergySummaryCard({ title, totals, isDark }) {
 
   return (
     <Paper elevation={0} sx={{
-      p: 2.5, borderRadius: 3, height: "100%",
+      borderRadius: 3, height: "100%", overflow: "hidden",
       bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
       border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
     }}>
-      <Typography sx={{ fontSize: 14, fontWeight: 600, mb: 0.3, color: headerColor, textAlign: "center" }}>
-        {title} — Energy Summary
-      </Typography>
+      <Box sx={{
+        px: 2.5, py: 1.5,
+        bgcolor: isDark ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.04)",
+        borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: headerColor }}>
+          {title} — Energy Summary
+        </Typography>
+        <Box sx={{
+          px: 1.2, py: 0.3, borderRadius: 1.5,
+          bgcolor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+        }}>
+          <Typography sx={{ fontSize: 10, fontWeight: 600, color: subColor }}>{subtitle}</Typography>
+        </Box>
+      </Box>
+      <Box sx={{ p: 2.5 }}>
       <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 1 }}>
         <Typography sx={{ fontSize: 10, color: "#f97316" }}>Import: N$ {IMPORT_RATE.toFixed(2)}/kWh</Typography>
         <Typography sx={{ fontSize: 10, color: "#22c55e" }}>Export: N$ {EXPORT_RATE.toFixed(2)}/kWh</Typography>
@@ -217,6 +231,7 @@ function EnergySummaryCard({ title, totals, isDark }) {
           </Typography>
         </Box>
       ))}
+      </Box>
     </Paper>
   );
 }
@@ -766,11 +781,17 @@ function Dashboard() {
             {/* TODAY & THIS MONTH SUMMARY CARDS WITH DONUT CHARTS */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} md={6}>
-                <EnergySummaryCard title="Today" totals={dayTotals} isDark={isDark} />
+                <EnergySummaryCard
+                  title="Today"
+                  subtitle={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  totals={dayTotals}
+                  isDark={isDark}
+                />
               </Grid>
               <Grid item xs={12} md={6}>
                 <EnergySummaryCard
                   title={`${new Date().toLocaleString("default", { month: "long" })} ${new Date().getFullYear()}`}
+                  subtitle={`1 — ${new Date().getDate()} ${new Date().toLocaleString("default", { month: "short" })} ${new Date().getFullYear()}`}
                   totals={monthTotals}
                   isDark={isDark}
                 />
