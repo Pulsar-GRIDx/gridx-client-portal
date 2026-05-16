@@ -701,11 +701,12 @@ function Dashboard() {
               { label: "Voltage", val: voltage, unit: "V", color: "#3b82f6" },
               { label: "Current", val: current, unit: "A", color: "#10b981" },
               { label: "Frequency", val: frequency, unit: "Hz", color: "#8b5cf6" },
-              { label: "Signal", val: signalStrengthData ? `${signalStrengthData}` : "---", unit: "dBm", color: "#eab308" },
+              { label: "Temperature", val: healthData?.temperature ? `${parseFloat(healthData.temperature).toFixed(1)}` : "---", unit: "°C", color: "#ef4444" },
+              { label: "Signal", val: signalStrengthData ? `${signalStrengthData}` : healthData?.signal_strength ? `${healthData.signal_strength}` : "---", unit: signalStrengthData ? "dBm" : "%", color: "#eab308" },
             ].map((item, i) => (
               <Box key={i} sx={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                py: 1.2, borderBottom: i < 4 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
+                py: 1.2, borderBottom: i < 5 ? `1px solid ${isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9"}` : "none",
               }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: item.color }} />
@@ -1179,100 +1180,94 @@ function Dashboard() {
         );
       })()}
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper elevation={0} sx={{
-            p: 2.5, borderRadius: 3,
-            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <AccessTimeRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                Tariff Info
-              </Typography>
-            </Box>
-            {tariffInfo ? (
-              <Box>
-                {[
-                  { label: "Tariff Type", val: tariffInfo.tariff_type || tariffInfo.tariffType || "Standard" },
-                  { label: "Rate", val: tariffInfo.rate ? `R ${tariffInfo.rate}/kWh` : "N/A" },
-                  { label: "Period", val: tariffInfo.current_period || tariffInfo.period || "N/A" },
-                ].map((item, i) => (
-                  <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.8 }}>
-                    <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>{item.val}</Typography>
-                  </Box>
-                ))}
-              </Box>
-            ) : (
-              <Typography sx={{ fontSize: 12, color: isDark ? "#475569" : "#94a3b8" }}>Loading...</Typography>
-            )}
-          </Paper>
-        </Grid>
+      {/* MONTHLY COST BREAKDOWN FOR THE YEAR */}
+      {(() => {
+        const year = new Date().getFullYear();
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const currentMonth = new Date().getMonth();
+        const todayStr = new Date().toISOString().split("T")[0];
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper elevation={0} sx={{
-            p: 2.5, borderRadius: 3,
-            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <ThermostatRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                Meter Health
-              </Typography>
-            </Box>
-            {healthData ? (
-              <Box>
-                {[
-                  { label: "Temperature", val: healthData.temperature ? `${parseFloat(healthData.temperature).toFixed(1)}°C` : "N/A" },
-                  { label: "Signal", val: healthData.signal_strength ? `${healthData.signal_strength}%` : "N/A" },
-                  { label: "Uptime", val: healthData.uptime || "N/A" },
-                ].map((item, i) => (
-                  <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.8 }}>
-                    <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>{item.val}</Typography>
-                  </Box>
-                ))}
-              </Box>
-            ) : (
-              <Typography sx={{ fontSize: 12, color: isDark ? "#475569" : "#94a3b8" }}>Loading...</Typography>
-            )}
-          </Paper>
-        </Grid>
+        const todayImpKwh = netHourly?.hourly ? netHourly.hourly.reduce((s, h) => s + (h.import || 0), 0) / 1000 : 0;
+        const todayExpKwh = netHourly?.hourly ? netHourly.hourly.reduce((s, h) => s + (h.export || 0), 0) / 1000 : 0;
 
-        <Grid item xs={12} sm={6} md={4}>
-          <Paper elevation={0} sx={{
-            p: 2.5, borderRadius: 3,
-            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <LocationOnRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                Location
+        const monthlyCosts = monthNames.map((name, m) => {
+          let impKwh = 0, expKwh = 0;
+          const allRows = [...(actualDaily?.history || [])];
+          const netRows = netDaily?.history || [];
+          const actualDates = new Set(allRows.map(r => (r.date || "").split("T")[0]));
+
+          allRows.forEach(r => {
+            const d = new Date(r.date);
+            if (d.getMonth() === m && d.getFullYear() === year && (r.date || "").split("T")[0] !== todayStr) {
+              impKwh += (r.import_wh || 0) / 1000;
+              expKwh += (r.export_wh || 0) / 1000;
+            }
+          });
+
+          netRows.forEach(r => {
+            const dateStr = (r.date || "").split("T")[0];
+            if (actualDates.has(dateStr) || dateStr === todayStr) return;
+            const d = new Date(r.date);
+            if (d.getMonth() === m && d.getFullYear() === year) {
+              impKwh += (r.import || 0) / 1000;
+              expKwh += (r.export || 0) / 1000;
+            }
+          });
+
+          if (m === currentMonth) {
+            impKwh += todayImpKwh;
+            expKwh += todayExpKwh;
+          }
+
+          return { label: name, importCost: impKwh * IMPORT_RATE, exportCredit: expKwh * EXPORT_RATE };
+        });
+
+        const cardBgY = isDark ? "rgba(30,41,59,0.6)" : "#fff";
+        const cardBorderY = `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`;
+        const headerColorY = isDark ? "#e2e8f0" : "#1e293b";
+
+        return (
+          <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, bgcolor: cardBgY, border: cardBorderY }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", mb: 2, gap: 1 }}>
+              <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColorY }}>
+                Monthly Cost Breakdown — {year} (N$)
               </Typography>
-            </Box>
-            {location ? (
-              <Box>
-                {[
-                  { label: "Latitude", val: location.latitude || location.Latitude || "N/A" },
-                  { label: "Longitude", val: location.longitude || location.Longitude || "N/A" },
-                  { label: "Last Update", val: location.date_time ? new Date(location.date_time).toLocaleDateString() : "N/A" },
-                ].map((item, i) => (
-                  <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.8 }}>
-                    <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b" }}>{item.label}</Typography>
-                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>{item.val}</Typography>
-                  </Box>
-                ))}
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Chip size="small" label={`Import: N$ ${IMPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.2)" }} />
+                <Chip size="small" label={`Export: N$ ${EXPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }} />
               </Box>
-            ) : (
-              <Typography sx={{ fontSize: 12, color: isDark ? "#475569" : "#94a3b8" }}>Loading...</Typography>
-            )}
+            </Box>
+            <Chart
+              type="bar" height={320}
+              options={{
+                chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+                colors: ["#f97316", "#22c55e"],
+                plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                xaxis: {
+                  categories: monthNames,
+                  labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                  axisBorder: { show: false }, axisTicks: { show: false },
+                },
+                yaxis: {
+                  labels: {
+                    style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                    formatter: (v) => `N$ ${v.toFixed(0)}`,
+                  },
+                  title: { text: "N$", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                },
+                grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+                tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => `N$ ${v.toFixed(2)}` } },
+                dataLabels: { enabled: false },
+                legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+              }}
+              series={[
+                { name: "Import Cost (N$)", data: monthlyCosts.map(r => parseFloat(r.importCost.toFixed(2))) },
+                { name: "Export Credit (N$)", data: monthlyCosts.map(r => parseFloat(r.exportCredit.toFixed(2))) },
+              ]}
+            />
           </Paper>
-        </Grid>
-      </Grid>
+        );
+      })()}
     </Box>
   );
 }
