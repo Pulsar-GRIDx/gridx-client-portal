@@ -1038,6 +1038,143 @@ function Dashboard() {
                 </Box>
               </Box>
             </Paper>
+
+            {/* WEEKLY POWER CONSUMPTION - IMPORT & EXPORT (kWh) */}
+            {(() => {
+              const weekData = (() => {
+                const today = new Date();
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - i);
+                  days.push(d);
+                }
+                return days.map(d => {
+                  const dateStr = d.toISOString().split("T")[0];
+                  const isToday = dateStr === today.toISOString().split("T")[0];
+                  const dayLabel = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+                  if (isToday) {
+                    return { label: `Today (${dayLabel})`, importKwh: dayTotals.importKwh, exportKwh: dayTotals.exportKwh };
+                  }
+                  const actualRow = actualDaily?.history?.find(r => (r.date || "").startsWith(dateStr));
+                  if (actualRow) {
+                    return { label: dayLabel, importKwh: (actualRow.import_wh || 0) / 1000, exportKwh: (actualRow.export_wh || 0) / 1000 };
+                  }
+                  const netRow = netDaily?.history?.find(r => (r.date || "").startsWith(dateStr));
+                  return { label: dayLabel, importKwh: netRow ? (netRow.import || 0) / 1000 : 0, exportKwh: netRow ? (netRow.export || 0) / 1000 : 0 };
+                });
+              })();
+              return (
+                <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: headerColor }}>
+                    Weekly Power Consumption (kWh)
+                  </Typography>
+                  <Chart
+                    type="bar" height={300}
+                    options={{
+                      chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+                      colors: ["#f97316", "#22c55e"],
+                      plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                      xaxis: {
+                        categories: weekData.map(r => r.label),
+                        labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
+                        axisBorder: { show: false }, axisTicks: { show: false },
+                      },
+                      yaxis: {
+                        labels: {
+                          style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                          formatter: (v) => v.toFixed(2),
+                        },
+                        title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                      },
+                      grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+                      tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
+                      dataLabels: { enabled: false },
+                      legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                    }}
+                    series={[
+                      { name: "Imported (kWh)", data: weekData.map(r => parseFloat(r.importKwh.toFixed(3))) },
+                      { name: "Exported (kWh)", data: weekData.map(r => parseFloat(r.exportKwh.toFixed(3))) },
+                    ]}
+                  />
+                </Paper>
+              );
+            })()}
+
+            {/* WEEKLY COST - IMPORT COST & EXPORT CREDIT (N$) */}
+            {(() => {
+              const weekCostData = (() => {
+                const today = new Date();
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - i);
+                  days.push(d);
+                }
+                return days.map(d => {
+                  const dateStr = d.toISOString().split("T")[0];
+                  const isToday = dateStr === today.toISOString().split("T")[0];
+                  const dayLabel = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+                  let impKwh, expKwh;
+                  if (isToday) {
+                    impKwh = dayTotals.importKwh;
+                    expKwh = dayTotals.exportKwh;
+                  } else {
+                    const actualRow = actualDaily?.history?.find(r => (r.date || "").startsWith(dateStr));
+                    if (actualRow) {
+                      impKwh = (actualRow.import_wh || 0) / 1000;
+                      expKwh = (actualRow.export_wh || 0) / 1000;
+                    } else {
+                      const netRow = netDaily?.history?.find(r => (r.date || "").startsWith(dateStr));
+                      impKwh = netRow ? (netRow.import || 0) / 1000 : 0;
+                      expKwh = netRow ? (netRow.export || 0) / 1000 : 0;
+                    }
+                  }
+                  return { label: isToday ? `Today (${dayLabel})` : dayLabel, importCost: impKwh * IMPORT_RATE, exportCredit: expKwh * EXPORT_RATE };
+                });
+              })();
+              return (
+                <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, mb: 3, bgcolor: cardBg, border: cardBorder }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", mb: 2, gap: 1 }}>
+                    <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColor }}>
+                      Weekly Cost Breakdown (N$)
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                      <Chip size="small" label={`Import: N$ ${IMPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.2)" }} />
+                      <Chip size="small" label={`Export: N$ ${EXPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }} />
+                    </Box>
+                  </Box>
+                  <Chart
+                    type="bar" height={300}
+                    options={{
+                      chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
+                      colors: ["#f97316", "#22c55e"],
+                      plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                      xaxis: {
+                        categories: weekCostData.map(r => r.label),
+                        labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" } },
+                        axisBorder: { show: false }, axisTicks: { show: false },
+                      },
+                      yaxis: {
+                        labels: {
+                          style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                          formatter: (v) => `N$ ${v.toFixed(2)}`,
+                        },
+                        title: { text: "N$", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                      },
+                      grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+                      tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => `N$ ${v.toFixed(2)}` } },
+                      dataLabels: { enabled: false },
+                      legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+                    }}
+                    series={[
+                      { name: "Import Cost (N$)", data: weekCostData.map(r => parseFloat(r.importCost.toFixed(2))) },
+                      { name: "Export Credit (N$)", data: weekCostData.map(r => parseFloat(r.exportCredit.toFixed(2))) },
+                    ]}
+                  />
+                </Paper>
+              );
+            })()}
           </>
         );
       })()}
