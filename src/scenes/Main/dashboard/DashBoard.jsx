@@ -706,7 +706,6 @@ function Dashboard() {
             </Box>
             <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
               {[
-                { label: "Total Today", val: `${totalEnergy.toFixed(3)} kWh`, color: "#f97316" },
                 { label: "Average / Hour", val: `${avgEnergy.toFixed(3)} kWh`, color: "#3b82f6" },
                 { label: "Peak Hour", val: `${peakEnergy.toFixed(3)} kWh`, color: "#eab308" },
               ].map((s, i) => (
