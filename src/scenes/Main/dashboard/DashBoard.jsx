@@ -573,14 +573,18 @@ function Dashboard() {
     return netHourly.hourly.filter(h => h.hour <= currentHour).reduce((sum, h) => sum + (h.export || 0), 0) / 1000;
   })();
 
+  const energyVals = chartData.filter(d => d.y > 0).map(d => d.y);
+  const avgEnergy = energyVals.length ? energyVals.reduce((a, b) => a + b, 0) / energyVals.length : 0;
+  const peakEnergy = energyVals.length ? Math.max(...energyVals) : 0;
+  const totalEnergy = energyVals.reduce((a, b) => a + b, 0);
+
   const chartOpts = {
-    chart: { type: "line", toolbar: { show: false }, background: "transparent" },
+    chart: { type: "area", toolbar: { show: false }, background: "transparent" },
     stroke: { curve: "smooth", width: 2.5 },
-    colors: ["#3b82f6"],
-    markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
+    colors: ["#f97316"],
     fill: {
       type: "gradient",
-      gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.05, stops: [0, 90, 100] },
+      gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 90, 100] },
     },
     xaxis: {
       categories: chartData.map(d => d.x),
@@ -600,6 +604,19 @@ function Dashboard() {
       y: { formatter: (v) => `${v >= 0 ? "Import" : "Export"}: ${Math.abs(v).toFixed(3)} kWh` },
     },
     dataLabels: { enabled: false },
+    markers: { size: 0 },
+    annotations: {
+      yaxis: [{
+        y: avgEnergy,
+        borderColor: "#f97316",
+        strokeDashArray: 4,
+        label: {
+          text: `Avg: ${avgEnergy.toFixed(3)} kWh`,
+          style: { color: "#f97316", background: "transparent", fontSize: "10px" },
+          position: "right",
+        },
+      }],
+    },
   };
 
   return (
@@ -672,6 +689,7 @@ function Dashboard() {
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
           }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <BoltRoundedIcon sx={{ fontSize: 20, color: "#f97316" }} />
               <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
                 Energy Consumption (Today)
               </Typography>
@@ -686,17 +704,23 @@ function Dashboard() {
                 }}
               />
             </Box>
-            <Box sx={{ display: "flex", gap: 2, mb: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#f97316" }} />
-                <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b" }}>Import (from grid)</Typography>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#22c55e" }} />
-                <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b" }}>Export (to grid)</Typography>
-              </Box>
+            <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
+              {[
+                { label: "Total Today", val: `${totalEnergy.toFixed(3)} kWh`, color: "#f97316" },
+                { label: "Average / Hour", val: `${avgEnergy.toFixed(3)} kWh`, color: "#3b82f6" },
+                { label: "Peak Hour", val: `${peakEnergy.toFixed(3)} kWh`, color: "#eab308" },
+              ].map((s, i) => (
+                <Box key={i} sx={{
+                  flex: 1, textAlign: "center", py: 1.5, borderRadius: 2,
+                  bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                  border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+                }}>
+                  <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", mb: 0.3 }}>{s.label}</Typography>
+                  <Typography sx={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.val}</Typography>
+                </Box>
+              ))}
             </Box>
-            <Chart type="area" height={300} options={chartOpts} series={[{ name: "Net Energy", data: chartData.map(d => d.y) }]} />
+            <Chart type="area" height={300} options={chartOpts} series={[{ name: "Import (kWh)", data: chartData.map(d => d.y) }]} />
           </Paper>
         </Grid>
 
@@ -848,188 +872,7 @@ function Dashboard() {
         );
       })()}
 
-      {/* TOTAL HOME CONSUMPTION LINE CHART */}
-      {(() => {
-        const totalConsData = Array.from({ length: 24 }, (_, i) => {
-          const label = `${String(i).padStart(2, "0")}:00`;
-          if (hasActual) {
-            const ah = actualHourly.hourly.find(r => r.hour === i);
-            return { x: label, y: ah ? parseFloat((ah.active_wh / 1000).toFixed(3)) : 0 };
-          }
-          const regularKwh = hourlyMap[label] || hourlyMap[i] || hourlyMap[String(i)] || 0;
-          const netHour = netHourly?.hourly?.find(r => r.hour === i);
-          const importKwh = netHour ? netHour.import / 1000 : 0;
-          const exportKwh = netHour ? netHour.export / 1000 : 0;
-          const solarSelf = Math.max(0, regularKwh - importKwh);
-          const total = importKwh + solarSelf + (exportKwh > 0 && regularKwh === 0 ? exportKwh * 0.5 : 0);
-          return { x: label, y: parseFloat(Math.max(regularKwh, total).toFixed(3)) };
-        });
-        const totalConsOpts = {
-          chart: { type: "line", toolbar: { show: false }, background: "transparent" },
-          stroke: { curve: "smooth", width: 2.5 },
-          colors: ["#8b5cf6"],
-          markers: { size: 3, strokeWidth: 0, hover: { size: 5 } },
-          xaxis: {
-            categories: totalConsData.map(d => d.x),
-            labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
-            axisBorder: { show: false }, axisTicks: { show: false },
-          },
-          yaxis: {
-            labels: {
-              style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
-              formatter: (v) => v.toFixed(2),
-            },
-            title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
-          },
-          grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-          tooltip: { theme: isDark ? "dark" : "light", y: { formatter: (v) => v.toFixed(3) + " kWh" } },
-          dataLabels: { enabled: false },
-        };
-        return (
-          <Paper elevation={0} sx={{
-            p: 2.5, borderRadius: 3, mb: 3,
-            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                Total Home Consumption (Today)
-              </Typography>
-              <Chip
-                size="small"
-                label={hasActual ? "Measured" : "Estimated"}
-                sx={{
-                  fontSize: 9, fontWeight: 600, height: 20,
-                  bgcolor: hasActual ? "rgba(34,197,94,0.1)" : "rgba(249,115,22,0.1)",
-                  color: hasActual ? "#22c55e" : "#f97316",
-                  border: `1px solid ${hasActual ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.2)"}`,
-                }}
-              />
-            </Box>
-            <Typography sx={{ fontSize: 11, color: isDark ? "#64748b" : "#94a3b8", mb: 1, mt: -1 }}>
-              {hasActual ? "Actual measured energy from meter registers" : "Combined energy from grid and solar — total load on the home"}
-            </Typography>
-            <Chart type="line" height={220} options={totalConsOpts} series={[{ name: "Total kWh", data: totalConsData.map(d => d.y) }]} />
-          </Paper>
-        );
-      })()}
 
-      {/* THREE-SOURCE ENERGY COMPARISON */}
-      {(() => {
-        const netH = netHourly?.hourly || [];
-        const actH = actualHourly?.hourly || [];
-        const srvH = serverHourly?.hourly || [];
-        const hasAny = netH.length > 0 || actH.length > 0 || srvH.length > 0;
-        if (!hasAny) return null;
-
-        const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, "0")}:00`);
-        const currentHour = new Date().getHours();
-
-        const netData = hours.map((_, i) => {
-          if (i > currentHour) return 0;
-          const h = netH.find(r => r.hour === i);
-          return h ? parseFloat(((h.import || 0) / 1000).toFixed(3)) : 0;
-        });
-        const actData = hours.map((_, i) => {
-          if (i > currentHour) return 0;
-          const h = actH.find(r => r.hour === i);
-          return h ? parseFloat(((h.import_wh || 0) / 1000).toFixed(3)) : 0;
-        });
-        const srvData = hours.map((_, i) => {
-          if (i > currentHour) return 0;
-          const h = srvH.find(r => r.hour === i);
-          return h ? parseFloat(((h.import_wh || 0) / 1000).toFixed(3)) : 0;
-        });
-
-        const compOpts = {
-          chart: { type: "bar", toolbar: { show: false }, background: "transparent" },
-          colors: ["#3b82f6", "#8b5cf6", "#22c55e"],
-          plotOptions: { bar: { borderRadius: 3, columnWidth: "70%" } },
-          xaxis: {
-            categories: hours,
-            labels: { style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "9px" }, rotate: -45 },
-            axisBorder: { show: false }, axisTicks: { show: false },
-          },
-          yaxis: {
-            labels: {
-              style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
-              formatter: (v) => v.toFixed(2),
-            },
-            title: { text: "kWh", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
-          },
-          grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
-          tooltip: {
-            theme: isDark ? "dark" : "light",
-            shared: true,
-            intersect: false,
-            custom: ({ series, dataPointIndex, w }) => {
-              const hr = hours[dataPointIndex];
-              const nv = series[0]?.[dataPointIndex] || 0;
-              const av = series[1]?.[dataPointIndex] || 0;
-              const sv = series[2]?.[dataPointIndex] || 0;
-              const ref = nv;
-              const aDiff = ref > 0 ? (((av - ref) / ref) * 100).toFixed(1) : "N/A";
-              const sDiff = ref > 0 ? (((sv - ref) / ref) * 100).toFixed(1) : "N/A";
-              const srvEntry = srvH.find(r => r.hour === dataPointIndex);
-              const dir = srvEntry?.dominant_direction || "none";
-              const conf = srvEntry?.direction_confidence || 0;
-              return '<div style="padding:8px 12px;font-size:12px;background:' + (isDark ? '#1e293b' : '#fff') + ';border:1px solid ' + (isDark ? '#334155' : '#e2e8f0') + ';border-radius:6px;color:' + (isDark ? '#e2e8f0' : '#1e293b') + '">' +
-                '<b>' + hr + '</b><br/>' +
-                '<span style="color:#3b82f6">Net Energy: ' + nv.toFixed(3) + ' kWh</span><br/>' +
-                '<span style="color:#8b5cf6">ESP32 Hourly: ' + av.toFixed(3) + ' kWh (' + (aDiff === "N/A" ? aDiff : (aDiff > 0 ? '+' : '') + aDiff + '%') + ')</span><br/>' +
-                '<span style="color:#22c55e">Server Hourly: ' + sv.toFixed(3) + ' kWh (' + (sDiff === "N/A" ? sDiff : (sDiff > 0 ? '+' : '') + sDiff + '%') + ')</span>' +
-                (dir !== 'none' ? '<br/><span style="color:#94a3b8">Direction: ' + dir + ' ' + conf + '% confidence</span>' : '') +
-                '</div>';
-            },
-          },
-          dataLabels: { enabled: false },
-          legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
-        };
-
-        return (
-          <Paper elevation={0} sx={{
-            p: 2.5, borderRadius: 3, mb: 3,
-            bgcolor: isDark ? "rgba(30,41,59,0.6)" : "#fff",
-            border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <BarChartRoundedIcon sx={{ fontSize: 20, color: "#8b5cf6" }} />
-              <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
-                Energy Source Comparison (Today)
-              </Typography>
-            </Box>
-            <Typography sx={{ fontSize: 11, color: isDark ? "#64748b" : "#94a3b8", mb: 2, mt: -1 }}>
-              Three independent energy measurements compared per hour
-            </Typography>
-            <Box sx={{ display: "flex", gap: 2, mb: 2, flexWrap: "wrap" }}>
-              {[
-                { label: "Net Energy (Reference)", color: "#3b82f6", desc: "Cumulative register deltas" },
-                { label: "ESP32 Hourly", color: "#8b5cf6", desc: "Firmware snapshot" },
-                { label: "Server Hourly", color: "#22c55e", desc: "Server clock + power direction" },
-              ].map((s, i) => (
-                <Box key={i} sx={{
-                  flex: 1, minWidth: 120, textAlign: "center", py: 1, borderRadius: 2,
-                  bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#f8fafc",
-                  border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-                }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: s.color, mx: "auto", mb: 0.5 }} />
-                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>{s.label}</Typography>
-                  <Typography sx={{ fontSize: 9, color: isDark ? "#64748b" : "#94a3b8" }}>{s.desc}</Typography>
-                </Box>
-              ))}
-            </Box>
-            <Chart
-              type="bar" height={300}
-              options={compOpts}
-              series={[
-                { name: "Net Energy", data: netData },
-                { name: "ESP32 Hourly", data: actData },
-                { name: "Server Hourly", data: srvData },
-              ]}
-            />
-          </Paper>
-        );
-      })()}
 
       {/* LIVE POWER FLOW */}
       {(() => {
