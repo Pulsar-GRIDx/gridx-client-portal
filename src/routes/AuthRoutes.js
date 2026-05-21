@@ -7,9 +7,9 @@ import LoginDesktop from "../scenes/Authorization/Desktop/LoginNew/Login";
 function AuthRoutes() {
   return (
     <Routes>
-      <Route path="*" element={<LoginDesktop />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="*" element={<LoginDesktop />} />
     </Routes>
   );
 }

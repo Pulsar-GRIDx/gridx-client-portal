@@ -4,7 +4,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
-import { netMeteringAPI, meterDataAPI, meterHealthAPI } from "../../../services/api";
+import { netMeteringAPI, meterDataAPI, meterHealthAPI, thdAPI } from "../../../services/api";
 import Chart from "react-apexcharts";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import TrendingDownRoundedIcon from "@mui/icons-material/TrendingDownRounded";
@@ -163,6 +163,10 @@ function NetMetering() {
   const [extendedDaily, setExtendedDaily] = useState(null);
   const [loading, setLoading] = useState(true);
   const [powerBuffer, setPowerBuffer] = useState([]);
+  const [thdHistory, setThdHistory] = useState([]);
+  const [thdLatest, setThdLatest] = useState(null);
+  const [power15min, setPower15min] = useState([]);
+  const [thd15min, setThd15min] = useState([]);
   const pollRef = useRef(null);
 
   useEffect(() => {
@@ -179,6 +183,11 @@ function NetMetering() {
       netMeteringAPI.getHourly(drn).then(d => setHourlyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 30).then(d => setDailyData(d?.data || d)),
       netMeteringAPI.getDaily(drn, 400).then(d => setExtendedDaily(d?.data || d)),
+      thdAPI.getLatest(drn).then(d => setThdLatest(d?.data || d)),
+      thdAPI.getHistory(drn, 200).then(d => {
+        const arr = Array.isArray(d) ? d : d?.data || [];
+        setThdHistory(arr.sort((a, b) => new Date(a.record_time || a.created_at) - new Date(b.record_time || b.created_at)));
+      }),
       (() => {
         const now = new Date();
         const y = now.getFullYear();
@@ -207,6 +216,14 @@ function NetMetering() {
           setPowerBuffer(readings);
         });
       })(),
+      meterDataAPI.getPower15min(drn).then(d => {
+        const arr = Array.isArray(d) ? d : d?.data || [];
+        setPower15min(arr);
+      }),
+      thdAPI.get15min(drn).then(d => {
+        const arr = Array.isArray(d) ? d : d?.data || [];
+        setThd15min(arr);
+      }),
     ]).finally(() => setLoading(false));
   }, [drn]);
 
@@ -391,14 +408,75 @@ function NetMetering() {
     legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
   });
 
-  const buf = powerBuffer;
-  const noData = buf.length === 0;
-  const voltageSeries = [{ name: "Voltage (V)", data: buf.map(r => [r.time, r.voltage]) }];
-  const freqSeries = [{ name: "Frequency (Hz)", data: buf.map(r => [r.time, r.frequency]) }];
-  const activeSeries = [{ name: "Active Power (W)", data: buf.map(r => [r.time, r.active_power]) }];
-  const reactiveSeries = [{ name: "Reactive Power (VAR)", data: buf.map(r => [r.time, r.reactive_power]) }];
-  const apparentSeries = [{ name: "Apparent Power (VA)", data: buf.map(r => [r.time, r.apparent_power]) }];
-  const pfSeries = [{ name: "Power Factor", data: buf.map(r => [r.time, r.power_factor]) }];
+  const p15 = power15min.length === 96 ? power15min : [];
+  const t15 = thd15min.length === 96 ? thd15min : [];
+  const noData = p15.length === 0;
+  const noThdData = t15.length === 0;
+
+  const cats15 = p15.map(r => r.time);
+  const make15minOpts = (colors, yLabel, yFormatter) => ({
+    chart: {
+      type: "line", toolbar: { show: false }, background: "transparent",
+      animations: { enabled: true, dynamicAnimation: { speed: 800 } },
+      zoom: { enabled: false },
+    },
+    stroke: { curve: "smooth", width: 2 },
+    colors,
+    xaxis: {
+      categories: cats15,
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        rotate: -45, rotateAlways: false,
+        formatter: (val) => {
+          if (!val) return "";
+          return val.endsWith(":00") ? val : "";
+        },
+      },
+      axisBorder: { show: false }, axisTicks: { show: false },
+      tickAmount: 24,
+    },
+    yaxis: {
+      title: { text: yLabel, style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+      labels: {
+        style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+        formatter: yFormatter || ((v) => v != null ? v.toFixed(1) : ""),
+      },
+    },
+    grid: { borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f1f5f9", strokeDashArray: 4 },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      x: { formatter: (val, { dataPointIndex }) => cats15[dataPointIndex] || val },
+      y: { formatter: yFormatter || ((v) => v != null ? v.toFixed(2) : "N/A") },
+    },
+    dataLabels: { enabled: false },
+    legend: { labels: { colors: isDark ? "#94a3b8" : "#64748b" }, position: "top" },
+  });
+
+  const thdCats = t15.map(r => r.time);
+  const makeThd15minOpts = (colors, yLabel, yFormatter) => ({
+    ...make15minOpts(colors, yLabel, yFormatter),
+    xaxis: {
+      ...make15minOpts(colors, yLabel, yFormatter).xaxis,
+      categories: thdCats,
+    },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      x: { formatter: (val, { dataPointIndex }) => thdCats[dataPointIndex] || val },
+      y: { formatter: yFormatter || ((v) => v != null ? v.toFixed(2) : "N/A") },
+    },
+  });
+
+  const voltageSeries = [{ name: "Voltage (V)", data: p15.map(r => r.voltage) }];
+  const freqSeries = [{ name: "Frequency (Hz)", data: p15.map(r => parseFloat((r.frequency * 100).toFixed(1))) }];
+  const activeSeries = [{ name: "Active Power (W)", data: p15.map(r => r.power) }];
+  const reactiveSeries = [{ name: "Reactive Power (VAR)", data: p15.map(r => r.reactive) }];
+  const apparentSeries = [{ name: "Apparent Power (VA)", data: p15.map(r => r.apparent) }];
+  const pfSeries = [{ name: "Power Factor", data: p15.map(r => r.pf) }];
+
+  const thdVSeries = [{ name: "Voltage THD (%)", data: t15.map(r => r.thdV) }];
+  const thdISeries = [{ name: "Current THD (%)", data: t15.map(r => r.thdI) }];
+  const dpfSeries = [{ name: "Displacement PF", data: t15.map(r => r.dispPF) }];
+  const distVASeries = [{ name: "Distortion VA", data: t15.map(r => r.distVA) }];
 
   if (loading) {
     return (
@@ -530,6 +608,9 @@ function NetMetering() {
                 { label: "Voltage", val: voltage, unit: "V", color: "#8b5cf6" },
                 { label: "Current", val: current, unit: "A", color: "#ef4444" },
                 { label: "Frequency", val: frequency, unit: "Hz", color: "#06b6d4" },
+                { label: "Voltage THD", val: thdLatest?.thd_voltage != null ? parseFloat(thdLatest.thd_voltage).toFixed(1) : "---", unit: "%", color: "#e879f9" },
+                { label: "Current THD", val: thdLatest?.thd_current != null ? parseFloat(thdLatest.thd_current).toFixed(1) : "---", unit: "%", color: "#fb923c" },
+                { label: "Displ. PF", val: thdLatest?.displacement_pf != null ? parseFloat(thdLatest.displacement_pf).toFixed(3) : "---", unit: "", color: "#34d399" },
               ].map((item, i) => (
                 <Grid item xs={6} sm={3} key={i}>
                   <Box sx={{
@@ -553,7 +634,7 @@ function NetMetering() {
               Voltage
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={makeLineOpts(["#8b5cf6"], "V", (v) => v != null ? v.toFixed(1) + " V" : "N/A")} series={voltageSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#8b5cf6"], "V", (v) => v != null ? v.toFixed(1) + " V" : "N/A")} series={voltageSeries} />
             )}
           </Paper>
 
@@ -562,7 +643,7 @@ function NetMetering() {
               Frequency
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={makeLineOpts(["#06b6d4"], "Hz", (v) => v != null ? v.toFixed(1) + " Hz" : "N/A")} series={freqSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#06b6d4"], "Hz", (v) => v != null ? v.toFixed(1) + " Hz" : "N/A")} series={freqSeries} />
             )}
           </Paper>
 
@@ -571,7 +652,7 @@ function NetMetering() {
               Active Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={makeLineOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
             )}
           </Paper>
 
@@ -580,7 +661,7 @@ function NetMetering() {
               Reactive Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={makeLineOpts(["#f59e0b"], "VAR", (v) => v != null ? v.toFixed(1) + " VAR" : "N/A")} series={reactiveSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#f59e0b"], "VAR", (v) => v != null ? v.toFixed(1) + " VAR" : "N/A")} series={reactiveSeries} />
             )}
           </Paper>
 
@@ -589,7 +670,7 @@ function NetMetering() {
               Apparent Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={makeLineOpts(["#ec4899"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={apparentSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#ec4899"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={apparentSeries} />
             )}
           </Paper>
 
@@ -599,7 +680,7 @@ function NetMetering() {
             </Typography>
             {noData ? chartPlaceholder : (
               <Chart type="line" height={380} options={{
-                ...makeLineOpts(["#10b981"], "", (v) => v != null ? v.toFixed(3) : "N/A"),
+                ...make15minOpts(["#10b981"], "", (v) => v != null ? v.toFixed(3) : "N/A"),
                 yaxis: {
                   min: 0, max: 1,
                   title: { text: "PF", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
@@ -609,6 +690,68 @@ function NetMetering() {
                   },
                 },
               }} series={pfSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Voltage THD
+            </Typography>
+            {noThdData ? (
+              <Box sx={{ height: 380, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for THD readings...</Typography>
+              </Box>
+            ) : (
+              <Chart type="line" height={380} options={makeThd15minOpts(["#e879f9"], "%", (v) => v != null ? v.toFixed(2) + " %" : "N/A")} series={thdVSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Current THD
+            </Typography>
+            {noThdData ? (
+              <Box sx={{ height: 380, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for THD readings...</Typography>
+              </Box>
+            ) : (
+              <Chart type="line" height={380} options={makeThd15minOpts(["#fb923c"], "%", (v) => v != null ? v.toFixed(2) + " %" : "N/A")} series={thdISeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Displacement Power Factor
+            </Typography>
+            {noThdData ? (
+              <Box sx={{ height: 380, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for THD readings...</Typography>
+              </Box>
+            ) : (
+              <Chart type="line" height={380} options={{
+                ...makeThd15minOpts(["#34d399"], "", (v) => v != null ? v.toFixed(3) : "N/A"),
+                yaxis: {
+                  min: 0, max: 1,
+                  title: { text: "DPF", style: { color: isDark ? "#64748b" : "#94a3b8", fontSize: "11px" } },
+                  labels: {
+                    style: { colors: isDark ? "#64748b" : "#94a3b8", fontSize: "10px" },
+                    formatter: (v) => v != null ? v.toFixed(2) : "",
+                  },
+                },
+              }} series={dpfSeries} />
+            )}
+          </Paper>
+
+          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+            <Typography sx={{ fontSize: 15, fontWeight: 600, mb: 2, color: isDark ? "#e2e8f0" : "#1e293b" }}>
+              Distortion Power
+            </Typography>
+            {noThdData ? (
+              <Box sx={{ height: 380, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography sx={{ color: isDark ? "#475569" : "#94a3b8" }}>Waiting for THD readings...</Typography>
+              </Box>
+            ) : (
+              <Chart type="line" height={380} options={makeThd15minOpts(["#f472b6"], "VA", (v) => v != null ? v.toFixed(1) + " VA" : "N/A")} series={distVASeries} />
             )}
           </Paper>
 

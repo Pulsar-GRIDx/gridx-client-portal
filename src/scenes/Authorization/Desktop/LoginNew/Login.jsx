@@ -28,6 +28,7 @@ function LoginDesktop() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [drn, setDrn] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => { setLocalError(""); }, [email, password]);
 
@@ -42,16 +43,17 @@ function LoginDesktop() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!firstName || !lastName || !email || !drn || !password) {
+    if (!firstName || !lastName || !email || !drn || !phone || !password) {
       setLocalError("Please fill in all required fields"); return;
     }
     if (!EMAIL_REGEX.test(email)) { setLocalError("Invalid email address"); return; }
     if (!DRN_REGEX.test(drn)) { setLocalError("DRN must start with 0260 followed by 12 digits"); return; }
+    if (phone.replace(/[\s\-\(\)]/g, "").length < 8) { setLocalError("Please enter a valid phone number"); return; }
     if (password.length < 6) { setLocalError("Password must be at least 6 characters"); return; }
     if (password !== confirmPwd) { setLocalError("Passwords do not match"); return; }
     setLoading(true);
     setLocalError("");
-    await apiCallRegister({ FirstName: firstName, LastName: lastName, Email: email, DRN: drn, Password: password });
+    await apiCallRegister({ FirstName: firstName, LastName: lastName, Email: email, DRN: drn, Phone: phone, Password: password });
     setLoading(false);
   };
 
@@ -169,6 +171,17 @@ function LoginDesktop() {
                 placeholder="0260XXXXXXXXXXXX"
                 sx={inputSx} required={isSignUp}
                 inputProps={{ inputMode: "numeric" }}
+              />
+            )}
+            {isSignUp && (
+              <TextField
+                fullWidth label="Phone Number" size="small"
+                value={phone} onChange={(e) => setPhone(e.target.value)}
+                placeholder="+264 XX XXX XXXX"
+                sx={inputSx} required
+                inputProps={{ inputMode: "tel" }}
+                helperText="Must be an authorized number on the meter"
+                FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.35)", ml: 0.5 } }}
               />
             )}
             {!isSignUp && !drn && (

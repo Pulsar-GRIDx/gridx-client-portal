@@ -59,6 +59,7 @@ export const meterDataAPI = {
   getProfileByDRN: (drn) => get(`/meterDataByDRN/${drn}`),
   getCellNetwork: (drn) => get(`/meterCellNetwork/getLastUpdate/${drn}`),
   getTokenInfo: (drn) => get(`/settings/tokenInformation/${drn}`),
+  getPower15min: (drn) => get(`/meterPower/power15min/${drn}`),
 };
 
 export const meterControlAPI = {
@@ -117,6 +118,10 @@ export const actualEnergyAPI = {
   getDaily: (drn, days = 30) => get(`/mqtt/actual-energy/${drn}/daily?days=${days}`),
 };
 
+export const serverEnergyAPI = {
+  getHourly: (drn, date) => get(`/mqtt/server-energy/${drn}/hourly${date ? '?date=' + date : ''}`),
+};
+
 export const mqttAPI = {
   sendToken: (drn, token) => post(`/mqtt/command/${drn}`, { command: "send_token", token }),
   creditTransfer: (drn, data) => post(`/mqtt/credit-transfer/${drn}`, data),
@@ -128,4 +133,10 @@ export const meterHealthAPI = {
   getHistory: (drn, limit = 72) => get(`/mqtt/meter-health/${drn}/history?limit=${limit}`),
 };
 
-export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, actualEnergy: actualEnergyAPI, mqtt: mqttAPI, health: meterHealthAPI, API_BASE };
+export const thdAPI = {
+  getLatest: (drn) => get(`/mqtt/thd/${drn}`),
+  getHistory: (drn, limit = 72) => get(`/mqtt/thd/${drn}/history?limit=${limit}`),
+  get15min: (drn) => get(`/mqtt/thd/${drn}/15min`),
+};
+
+export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, actualEnergy: actualEnergyAPI, serverEnergy: serverEnergyAPI, mqtt: mqttAPI, health: meterHealthAPI, thd: thdAPI, API_BASE };

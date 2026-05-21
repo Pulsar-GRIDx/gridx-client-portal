@@ -44,7 +44,7 @@ const AuthProvider = ({ children }) => {
         FirstName: data.FirstName || data.name || data.firstName,
         LastName: data.LastName || data.surname || data.lastName,
         DRN: data.DRN || data.drn,
-        Phone: data.Phone || data.phone || undefined,
+        Phone: data.Phone || data.phone,
       });
       const token = response.token;
       const userData = response.user;
@@ -57,6 +57,8 @@ const AuthProvider = ({ children }) => {
         setApiErrMsg("No Server Response");
       } else if (err.message.includes("already") || err.message.includes("409")) {
         setApiErrMsg("Account already registered");
+      } else if (err.message.includes("not authorized") || err.message.includes("403")) {
+        setApiErrMsg("Phone number is not authorized for this meter. Contact your administrator.");
       } else if (err.message.includes("not found") || err.message.includes("meter")) {
         setApiErrMsg("Meter number (DRN) not found in system");
       } else {
