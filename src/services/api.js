@@ -59,7 +59,7 @@ export const meterDataAPI = {
   getProfileByDRN: (drn) => get(`/meterDataByDRN/${drn}`),
   getCellNetwork: (drn) => get(`/meterCellNetwork/getLastUpdate/${drn}`),
   getTokenInfo: (drn) => get(`/settings/tokenInformation/${drn}`),
-  getPower15min: (drn) => get(`/meterPower/power15min/${drn}`),
+  getPower15min: (drn) => get(`/summary/power15min/${drn}`),
 };
 
 export const meterControlAPI = {
