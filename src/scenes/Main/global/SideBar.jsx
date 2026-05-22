@@ -16,6 +16,7 @@ import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import CellTowerRoundedIcon from "@mui/icons-material/CellTowerRounded";
 
 const drawerWidth = 260;
 
@@ -25,6 +26,7 @@ const navItems = [
   { label: "Recharge", path: "/recharge", icon: <AccountBalanceWalletRoundedIcon /> },
   { label: "Statistics", path: "/statistics", icon: <BarChartRoundedIcon /> },
   { label: "Net Metering", path: "/net-metering", icon: <SolarPowerRoundedIcon /> },
+  { label: "Data Usage", path: "/data-usage", icon: <CellTowerRoundedIcon /> },
   { divider: true },
   { label: "Profile", path: "/profile", icon: <PersonRoundedIcon /> },
   { label: "Settings", path: "/settings", icon: <SettingsRoundedIcon /> },

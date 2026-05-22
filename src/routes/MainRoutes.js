@@ -10,6 +10,7 @@ import Recharge from "../scenes/Main/recharge/Recharge";
 import Statistics from "../scenes/Main/statistics/Statistics";
 import NetMetering from "../scenes/Main/netmetering/NetMetering";
 import Settings from "../scenes/Main/settings/Settings";
+import DataUsage from "../scenes/Main/datausage/DataUsage";
 import NotFound from "./NotFound";
 import DataProvider from "../scenes/Main/Data/getData";
 import NotificationDataProvider from "../scenes/Main/Data/getNotificationsData";
@@ -41,6 +42,7 @@ const MainRoutes = () => {
                 <Route path="/net-metering" element={<NetMetering />} />
                 <Route path="/profile" element={<ProfileDash />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/data-usage" element={<DataUsage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>

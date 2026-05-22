@@ -139,4 +139,11 @@ export const thdAPI = {
   get15min: (drn) => get(`/mqtt/thd/${drn}/15min`),
 };
 
-export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, actualEnergy: actualEnergyAPI, serverEnergy: serverEnergyAPI, mqtt: mqttAPI, health: meterHealthAPI, thd: thdAPI, API_BASE };
+export const dataUsageAPI = {
+  getToday: (drn) => get(`/summary/data-usage/meter/${drn}/today`),
+  getDaily: (drn, days = 30) => get(`/summary/data-usage/meter/${drn}/daily?days=${days}`),
+  getBreakdown: (drn, days = 7) => get(`/summary/data-usage/breakdown/${drn}?days=${days}`),
+  getConfig: () => get(`/summary/data-usage/config`),
+};
+
+export default { auth: customerAuthAPI, meter: meterDataAPI, control: meterControlAPI, energy: energyDataAPI, vending: vendingAPI, geyser: geyserAPI, netMetering: netMeteringAPI, actualEnergy: actualEnergyAPI, serverEnergy: serverEnergyAPI, mqtt: mqttAPI, health: meterHealthAPI, thd: thdAPI, dataUsage: dataUsageAPI, API_BASE };
