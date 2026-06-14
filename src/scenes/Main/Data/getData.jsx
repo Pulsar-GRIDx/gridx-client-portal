@@ -97,10 +97,13 @@ const DataProvider = ({ children }) => {
       }
 
       if (eData) {
-        setUnitsData(parseFloat(eData.units || eData.active_energy || 0).toFixed(1));
+        // units is credit balance in kWh; active_energy is cumulative in Wh (divide by 1000)
+        const units = eData.units ? parseFloat(eData.units) : (parseFloat(eData.active_energy || 0) / 1000);
+        setUnitsData(units.toFixed(1));
         setAverageUnitsData(eData.units_used_today || 0);
       } else if (pData) {
-        setUnitsData(parseFloat(pData.active_energy || pData.units || 0).toFixed(1));
+        const units = pData.units ? parseFloat(pData.units) : (parseFloat(pData.active_energy || 0) / 1000);
+        setUnitsData(units.toFixed(1));
         setAverageUnitsData(pData.units_used_today || 0);
       }
     } catch (error) {
