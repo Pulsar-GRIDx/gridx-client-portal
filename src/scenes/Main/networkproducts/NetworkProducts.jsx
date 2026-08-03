@@ -6,6 +6,7 @@ import RouterRoundedIcon from "@mui/icons-material/RouterRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { categories, categoryById } from "./data/categories";
 import { allPackages, productSources } from "./data/mtcProducts";
+import { brandAssets } from "./data/branding";
 import CategoryFilters from "./components/CategoryFilters";
 import PackageCard from "./components/PackageCard";
 import ComparisonTable from "./components/ComparisonTable";
@@ -21,10 +22,10 @@ export default function NetworkProducts() {
   );
 
   return (
-    <Box>
+    <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
       {/* Hero */}
       <Card sx={{
-        p: { xs: 3, sm: 4 }, mb: 3, position: "relative", overflow: "hidden",
+        p: { xs: 2.5, sm: 3.5, md: 4 }, mb: { xs: 2.5, sm: 3 }, position: "relative", overflow: "hidden",
         background: isDark
           ? "linear-gradient(135deg, #0c1631 0%, #0a3fb0 140%)"
           : "linear-gradient(135deg, #eef4ff 0%, #dbe8ff 140%)",
@@ -37,26 +38,38 @@ export default function NetworkProducts() {
           position: "absolute", bottom: -80, left: "30%", width: 200, height: 200, borderRadius: "50%",
           background: "radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)",
         }} />
-        <Box sx={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        <Box sx={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, flexWrap: "wrap" }}>
           <Box sx={{
-            width: 56, height: 56, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center",
+            width: { xs: 46, sm: 52, md: 56 }, height: { xs: 46, sm: 52, md: 56 }, borderRadius: 3, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
             background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
           }}>
-            <RouterRoundedIcon sx={{ fontSize: 30, color: isDark ? "#fff" : mtc.blue[700] }} />
+            <RouterRoundedIcon sx={{ fontSize: { xs: 24, sm: 27, md: 30 }, color: isDark ? "#fff" : mtc.blue[700] }} />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 240 }}>
-            <Typography variant="h2" sx={{ color: isDark ? "#fff" : "#0c2a63" }}>
+          <Box sx={{ flex: 1, minWidth: 200 }}>
+            <Typography sx={{ fontSize: { xs: 24, sm: 29, md: 34 }, fontWeight: 800, letterSpacing: "-0.02em", color: isDark ? "#fff" : "#0c2a63" }}>
               Network Products
             </Typography>
-            <Typography variant="body1" sx={{ color: isDark ? "rgba(255,255,255,0.75)" : "#33538f", mt: 0.5 }}>
+            <Typography sx={{ fontSize: { xs: 13, sm: 14 }, color: isDark ? "rgba(255,255,255,0.75)" : "#33538f", mt: 0.5, maxWidth: 560 }}>
               GRIDx has partnered with MTC to bring connectivity to your doorstep — mobile data, Air Fibre wireless
               broadband, and Fibre, all in one place.
             </Typography>
           </Box>
         </Box>
+
+        <Box sx={{
+          position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 1,
+          mt: { xs: 2, sm: 2.5 }, pt: { xs: 1.5, sm: 2 },
+          borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.12)" : "rgba(12,42,99,0.12)"}`,
+        }}>
+          <Typography sx={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: isDark ? "rgba(255,255,255,0.55)" : "rgba(12,42,99,0.55)" }}>
+            In partnership with
+          </Typography>
+          <Box component="img" src={brandAssets.mtcLogo} alt="MTC" sx={{ height: { xs: 16, sm: 18 }, width: "auto", opacity: 0.95 }} />
+        </Box>
       </Card>
 
-      <Alert icon={<InfoOutlinedIcon />} severity="info" sx={{ mb: 3 }}>
+      <Alert icon={<InfoOutlinedIcon />} severity="info" sx={{ mb: { xs: 2.5, sm: 3 }, fontSize: { xs: 12.5, sm: 13.5 } }}>
         Pricing below is compiled from publicly available MTC information and may not reflect active promotions
         or regional availability. Packages marked <strong>"Confirm price"</strong> should be verified against{" "}
         <MuiLink href="https://www.mtc.com.na" target="_blank" rel="noopener">mtc.com.na</MuiLink> before being
@@ -65,7 +78,7 @@ export default function NetworkProducts() {
 
       <CategoryFilters categories={categories} active={activeCategory} onChange={setActiveCategory} />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
         {filteredPackages.map((pkg) => (
           <Fade in key={pkg.id} timeout={400}>
             <Grid item xs={12} sm={6} lg={4} xl={3}>

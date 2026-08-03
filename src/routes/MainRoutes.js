@@ -30,8 +30,12 @@ const MainRoutes = () => {
           <Sidebar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
           <Box sx={{
             flexGrow: 1,
+            minWidth: 0, // classic flexbox trap: without this, a deep descendant with an
+            // intrinsic min-width (e.g. a comparison table) silently forces this whole
+            // column — and the page — wider than the viewport on narrow screens.
             width: { sm: `calc(100% - ${drawerWidth}px)` },
             minHeight: "100vh",
+            overflowX: "hidden",
           }}>
             <Topbar handleDrawerToggle={handleDrawerToggle} />
             <Box sx={{ pt: 8, px: { xs: 2, sm: 3 }, pb: 2 }}>

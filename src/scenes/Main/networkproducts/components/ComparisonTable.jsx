@@ -19,26 +19,30 @@ export default function ComparisonTable({ packages }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <Box sx={{ mt: 5 }}>
+    <Box sx={{ mt: { xs: 4, sm: 5 } }}>
       <ButtonBase
         onClick={() => setOpen(!open)}
         sx={{
-          width: "100%", justifyContent: "space-between", px: 2.5, py: 1.75, borderRadius: 3,
+          width: "100%", justifyContent: "space-between", minHeight: 52,
+          px: { xs: 2, sm: 2.5 }, py: 1.5, borderRadius: 3,
           bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#fff",
           border: `1px solid ${isDark ? "rgba(148,163,184,0.12)" : "#e2e8f0"}`,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <CompareArrowsRoundedIcon sx={{ color: "text.secondary" }} />
-          <Typography sx={{ fontWeight: 700, fontSize: 14.5 }}>Compare all packages side-by-side</Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 14.5 } }}>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Compare all packages side-by-side</Box>
+            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Compare all packages</Box>
+          </Typography>
         </Box>
         <ExpandMoreRoundedIcon sx={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }} />
       </ButtonBase>
 
       <Collapse in={open} timeout={300}>
         <Card sx={{ mt: 2, overflow: "hidden" }}>
-          <TableContainer sx={{ overflowX: "auto" }}>
-            <Table size="small">
+          <TableContainer sx={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <Table size="small" sx={{ minWidth: 640 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Package</TableCell>

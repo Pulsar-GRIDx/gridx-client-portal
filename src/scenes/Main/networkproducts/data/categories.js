@@ -2,6 +2,8 @@
 // and a colour accent per family. Kept separate from the package data
 // itself (mtcProducts.js) so the accent system can be reused anywhere
 // (filters, badges, card gradients) from one source of truth.
+import { brandAssets } from "./branding";
+
 export const CATEGORY = {
   MOBILE: "mobile",
   AIR_FIBRE: "air_fibre",
@@ -15,6 +17,7 @@ export const categories = [
     shortLabel: "Mobile",
     emoji: "📶",
     tagline: "MTC Aweh prepaid bundles",
+    iconAsset: null, // no official per-tier Aweh icon published — Material icon used instead
     accent: {
       solid: "#f97316",
       light: "#fdba74",
@@ -30,6 +33,8 @@ export const categories = [
     shortLabel: "Air Fibre",
     emoji: "📡",
     tagline: "MTC Spectra fixed wireless broadband",
+    iconAsset: brandAssets.spectraTower, // official MTC Spectra illustration, recoloured to white on the gradient badge
+    iconAssetInvert: true,
     accent: {
       solid: "#a855f7",
       light: "#d8b4fe",
@@ -45,6 +50,8 @@ export const categories = [
     shortLabel: "Fibre",
     emoji: "🌐",
     tagline: "MTC Spectra fibre-to-the-home",
+    iconAsset: brandAssets.spectraTower, // same official MTC Spectra illustration — MTC doesn't publish a distinct Fibre-only mark
+    iconAssetInvert: true,
     accent: {
       solid: "#10b981",
       light: "#6ee7b7",

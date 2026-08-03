@@ -17,16 +17,14 @@ import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import SimCardRoundedIcon from "@mui/icons-material/SimCardRounded";
-import SettingsInputAntennaRoundedIcon from "@mui/icons-material/SettingsInputAntennaRounded";
-import CableRoundedIcon from "@mui/icons-material/CableRounded";
 import { CATEGORY } from "../data/categories";
 import SpecRow from "./SpecRow";
 import StatusBadge from "./StatusBadge";
 
-const CATEGORY_ICON = {
-  [CATEGORY.MOBILE]: <SimCardRoundedIcon sx={{ fontSize: 26 }} />,
-  [CATEGORY.AIR_FIBRE]: <SettingsInputAntennaRoundedIcon sx={{ fontSize: 26 }} />,
-  [CATEGORY.FIBRE]: <CableRoundedIcon sx={{ fontSize: 26 }} />,
+// Only Mobile lacks an official MTC asset (see branding.js) — Air Fibre and
+// Fibre render category.iconAsset (the real MTC Spectra illustration) instead.
+const CATEGORY_ICON_FALLBACK = {
+  [CATEGORY.MOBILE]: <SimCardRoundedIcon sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />,
 };
 
 const FEATURES_COLLAPSED_COUNT = 3;
@@ -49,8 +47,8 @@ export default function PackageCard({ pkg, category }) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        p: 3,
-        pt: 3.5,
+        p: { xs: 2.25, sm: 2.75, md: 3 },
+        pt: { xs: 2.75, sm: 3.25, md: 3.5 },
         overflow: "visible",
         border: `1.5px solid ${pkg.statusBadge ? `${accent.solid}55` : theme.palette.mode === "dark" ? "rgba(148,163,184,0.12)" : "#e2e8f0"}`,
         background: isDark
@@ -69,12 +67,24 @@ export default function PackageCard({ pkg, category }) {
       {/* Icon + category chip */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
         <Box sx={{
-          width: 52, height: 52, borderRadius: "16px",
+          width: { xs: 44, sm: 48, md: 52 }, height: { xs: 44, sm: 48, md: 52 }, borderRadius: "16px",
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: accent.gradient, color: "#fff",
+          background: accent.gradient, color: "#fff", flexShrink: 0,
           boxShadow: `0 8px 20px -6px ${accent.glow}`,
         }}>
-          {CATEGORY_ICON[pkg.category]}
+          {category.iconAsset ? (
+            <Box
+              component="img"
+              src={category.iconAsset}
+              alt=""
+              sx={{
+                width: "56%", height: "56%", objectFit: "contain",
+                filter: category.iconAssetInvert ? "brightness(0) invert(1)" : "none",
+              }}
+            />
+          ) : (
+            CATEGORY_ICON_FALLBACK[pkg.category]
+          )}
         </Box>
         {!pkg.verified && (
           <Chip
@@ -87,7 +97,7 @@ export default function PackageCard({ pkg, category }) {
       </Box>
 
       {/* Title */}
-      <Typography sx={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
+      <Typography sx={{ fontSize: { xs: 18.5, sm: 20, md: 21 }, fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
         {pkg.name}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4, mb: 2 }}>
@@ -117,9 +127,9 @@ export default function PackageCard({ pkg, category }) {
       </Box>
 
       {/* Price */}
-      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.6, mb: isBroadband ? 1 : 0.5 }}>
+      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.6, mb: isBroadband ? 1 : 0.5, flexWrap: "wrap" }}>
         <Typography sx={{
-          fontSize: 38, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1,
+          fontSize: { xs: 32, sm: 35, md: 38 }, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1,
           backgroundImage: accent.gradient, backgroundClip: "text", WebkitBackgroundClip: "text",
           color: "transparent",
         }}>
@@ -137,11 +147,12 @@ export default function PackageCard({ pkg, category }) {
               key={t}
               onClick={() => setTerm(t)}
               sx={{
-                flex: 1, py: 0.6, borderRadius: 2, fontSize: 11, fontWeight: 700,
+                flex: 1, minHeight: 40, borderRadius: 2, fontSize: 12, fontWeight: 700,
                 border: `1.5px solid ${t === term ? accent.solid : (isDark ? "rgba(148,163,184,0.2)" : "#e2e8f0")}`,
                 color: t === term ? (isDark ? accent.light : accent.dark) : "text.secondary",
                 bgcolor: t === term ? `${accent.solid}14` : "transparent",
                 transition: "all 0.15s ease",
+                "&:active": { transform: "scale(0.96)" },
               }}
             >
               {t}mo
@@ -194,7 +205,10 @@ export default function PackageCard({ pkg, category }) {
             </Collapse>
             <ButtonBase
               onClick={() => setExpanded(!expanded)}
-              sx={{ display: "flex", alignItems: "center", gap: 0.4, mt: 0.4, color: accent.solid, fontSize: 11.5, fontWeight: 700 }}
+              sx={{
+                display: "flex", alignItems: "center", gap: 0.4, mt: 0.4, py: 1, pr: 1, ml: -0.5,
+                minHeight: 40, borderRadius: 1.5, color: accent.solid, fontSize: 12, fontWeight: 700,
+              }}
             >
               {expanded ? "Show less" : `+${extraFeatures} more feature${extraFeatures > 1 ? "s" : ""}`}
               <ExpandMoreRoundedIcon sx={{ fontSize: 15, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }} />
@@ -234,12 +248,14 @@ export default function PackageCard({ pkg, category }) {
         target="_blank"
         rel="noopener"
         sx={{
-          mt: "auto", width: "100%", py: 1.3, borderRadius: 2.5,
+          mt: "auto", width: "100%", minHeight: 48, py: 1.3, borderRadius: 2.5,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75,
           background: accent.gradient, color: "#fff", fontWeight: 700, fontSize: 13.5,
           boxShadow: `0 10px 24px -8px ${accent.glow}`,
           transition: "transform 0.15s ease, box-shadow 0.15s ease",
+          WebkitTapHighlightColor: "transparent",
           "&:hover": { transform: "translateY(-1px)", boxShadow: `0 14px 30px -8px ${accent.glow}` },
+          "&:active": { transform: "translateY(0) scale(0.98)" },
         }}
       >
         View on MTC.com.na

@@ -154,6 +154,16 @@ export const themeSettings = (mode) => {
           head: { fontWeight: 700, fontSize: 11.5, letterSpacing: "0.04em", textTransform: "uppercase", color: t.textSecondary },
         },
       },
+      MuiButtonBase: {
+        defaultProps: { disableRipple: false },
+        styleOverrides: {
+          // Removes the grey/blue flash Android Chrome & iOS Safari draw on
+          // tap by default — every custom ButtonBase-based control (filter
+          // chips, term toggles, card CTAs) otherwise gets a jarring flash
+          // that clashes with our own hover/active treatments.
+          root: { WebkitTapHighlightColor: "transparent" },
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: { borderRadius: 10 },
