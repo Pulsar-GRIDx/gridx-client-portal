@@ -11,11 +11,12 @@ import Statistics from "../scenes/Main/statistics/Statistics";
 import NetMetering from "../scenes/Main/netmetering/NetMetering";
 import Settings from "../scenes/Main/settings/Settings";
 import DataUsage from "../scenes/Main/datausage/DataUsage";
+import NetworkProducts from "../scenes/Main/networkproducts/NetworkProducts";
 import NotFound from "./NotFound";
 import DataProvider from "../scenes/Main/Data/getData";
 import NotificationDataProvider from "../scenes/Main/Data/getNotificationsData";
 
-const drawerWidth = 260;
+const drawerWidth = 264;
 
 const MainRoutes = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -43,6 +44,7 @@ const MainRoutes = () => {
                 <Route path="/profile" element={<ProfileDash />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/data-usage" element={<DataUsage />} />
+                <Route path="/network-products" element={<NetworkProducts />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>
