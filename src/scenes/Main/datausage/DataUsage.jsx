@@ -80,7 +80,7 @@ const DataUsage = () => {
     chart: { type: "area", toolbar: { show: false }, zoom: { enabled: false }, fontFamily: "Inter, sans-serif" },
     stroke: { curve: "smooth", width: 2.5 },
     fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 90, 100] } },
-    colors: ["#3b82f6"],
+    colors: ["#1f63f2"],
     xaxis: {
       categories: todayData ? todayData.hourly.map(h => h.label) : [],
       labels: { style: { colors: textSecondary, fontSize: "11px" }, rotate: -45, rotateAlways: false, hideOverlappingLabels: true },
@@ -125,7 +125,7 @@ const DataUsage = () => {
   const dailyChartOpts = {
     chart: { type: "bar", toolbar: { show: false }, fontFamily: "Inter, sans-serif", stacked: false },
     plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
-    colors: ["#3b82f6", "#f97316"],
+    colors: ["#1f63f2", "#f97316"],
     xaxis: {
       categories: dailyData ? dailyData.daily.map(d => { const dt = new Date(d.date); return `${dt.getDate()}/${dt.getMonth() + 1}`; }) : [],
       labels: { style: { colors: textSecondary, fontSize: "11px" } },
@@ -149,7 +149,7 @@ const DataUsage = () => {
   const breakdownChartOpts = {
     chart: { type: "donut", fontFamily: "Inter, sans-serif" },
     labels: breakdown ? breakdown.breakdown.map(b => b.type) : [],
-    colors: ["#3b82f6", "#22c55e", "#f97316", "#a855f7", "#06b6d4", "#eab308", "#ef4444", "#64748b"],
+    colors: ["#1f63f2", "#22c55e", "#f97316", "#a855f7", "#06b6d4", "#eab308", "#ef4444", "#64748b"],
     legend: { position: "bottom", labels: { colors: textSecondary } },
     dataLabels: { enabled: true, formatter: (val) => `${val.toFixed(1)}%` },
     tooltip: { theme: isDark ? "dark" : "light" },
@@ -163,7 +163,7 @@ const DataUsage = () => {
     <Box sx={{ maxHeight: "calc(100vh - 80px)", overflowY: "auto", pb: 4 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <CellTowerRoundedIcon sx={{ fontSize: 28, color: "#3b82f6" }} />
+          <CellTowerRoundedIcon sx={{ fontSize: 28, color: "#1f63f2" }} />
           <Typography variant="h5" sx={{ fontWeight: 700, color: textPrimary }}>Data Usage</Typography>
           <Chip label="Live Tracking" size="small" sx={{ bgcolor: "rgba(34,197,94,0.15)", color: "#22c55e", fontWeight: 600, fontSize: 11 }} />
         </Box>
@@ -192,7 +192,7 @@ const DataUsage = () => {
             value={view === "today" ? formatBytes(todayData?.totalBytes || 0) : formatBytes(dailyData?.totalBytes || 0)}
             subtitle={view === "today" ? `${todayData?.totalMsgs || 0} messages` : `${dailyData?.daily?.reduce((s, d) => s + d.msgs, 0) || 0} messages`}
             icon={<DataUsageRoundedIcon />}
-            color="#3b82f6"
+            color="#1f63f2"
           />
         </Grid>
         <Grid item xs={6} sm={3}>
@@ -230,10 +230,10 @@ const DataUsage = () => {
           <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, bgcolor: cardBg, border: cardBorder, mb: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <DataUsageRoundedIcon sx={{ fontSize: 20, color: "#3b82f6" }} />
+                <DataUsageRoundedIcon sx={{ fontSize: 20, color: "#1f63f2" }} />
                 <Typography sx={{ fontWeight: 600, fontSize: 15, color: textPrimary }}>Hourly Data Consumption</Typography>
               </Box>
-              <Chip label={formatBytes(todayData?.totalBytes || 0)} size="small" sx={{ bgcolor: "rgba(59,130,246,0.12)", color: "#3b82f6", fontWeight: 600, fontSize: 11 }} />
+              <Chip label={formatBytes(todayData?.totalBytes || 0)} size="small" sx={{ bgcolor: "rgba(59,130,246,0.12)", color: "#1f63f2", fontWeight: 600, fontSize: 11 }} />
             </Box>
             <Chart options={hourlyChartOpts} series={hourlySeries} type="area" height={280} />
           </Paper>
@@ -255,10 +255,10 @@ const DataUsage = () => {
         <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, bgcolor: cardBg, border: cardBorder, mb: 2 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CalendarMonthRoundedIcon sx={{ fontSize: 20, color: "#3b82f6" }} />
+              <CalendarMonthRoundedIcon sx={{ fontSize: 20, color: "#1f63f2" }} />
               <Typography sx={{ fontWeight: 600, fontSize: 15, color: textPrimary }}>Daily Data Usage & Cost (30 Days)</Typography>
             </Box>
-            <Chip label={formatBytes(dailyData?.totalBytes || 0)} size="small" sx={{ bgcolor: "rgba(59,130,246,0.12)", color: "#3b82f6", fontWeight: 600, fontSize: 11 }} />
+            <Chip label={formatBytes(dailyData?.totalBytes || 0)} size="small" sx={{ bgcolor: "rgba(59,130,246,0.12)", color: "#1f63f2", fontWeight: 600, fontSize: 11 }} />
           </Box>
           <Chart options={dailyChartOpts} series={dailySeries} type="line" height={320} />
         </Paper>

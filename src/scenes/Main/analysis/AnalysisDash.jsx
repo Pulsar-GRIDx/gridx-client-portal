@@ -72,7 +72,7 @@ const AnalysisDash = () => {
         <Grid item xs={12} sm={4}>
           <SummaryCard
             title="Daily Consumption" value={`${timeperiodsEnergy?.day ?? 0} kWh`}
-            icon={<BoltRoundedIcon />} color="#3b82f6"
+            icon={<BoltRoundedIcon />} color="#1f63f2"
             pct={percentageEnergy?.day} isDark={isDark}
           />
         </Grid>

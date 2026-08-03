@@ -58,7 +58,7 @@ const ProfileDash = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2.5, flexWrap: "wrap" }}>
           <Avatar sx={{
             width: 56, height: 56, bgcolor: isDark ? "#1e3a5f" : "#dbeafe",
-            color: isDark ? "#60a5fa" : "#2563eb", fontSize: 22, fontWeight: 700,
+            color: isDark ? "#4b86ff" : "#0d4fdb", fontSize: 22, fontWeight: 700,
           }}>
             {fullName.charAt(0).toUpperCase()}
           </Avatar>
@@ -81,7 +81,7 @@ const ProfileDash = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={6} md={3}>
           <Paper elevation={0} sx={{ ...cardSx, textAlign: "center", py: 2 }}>
-            <BoltRoundedIcon sx={{ fontSize: 24, color: "#3b82f6", mb: 0.5 }} />
+            <BoltRoundedIcon sx={{ fontSize: 24, color: "#1f63f2", mb: 0.5 }} />
             <Typography sx={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b" }}>Voltage</Typography>
             <Typography sx={{ fontSize: 20, fontWeight: 700, color: isDark ? "#f1f5f9" : "#0f172a" }}>
               {voltage} <span style={{ fontSize: 11, fontWeight: 400, color: isDark ? "#64748b" : "#94a3b8" }}>V</span>
@@ -119,7 +119,7 @@ const ProfileDash = () => {
 
       <Paper elevation={0} sx={cardSx}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-          <ElectricMeterRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
+          <ElectricMeterRoundedIcon sx={{ fontSize: 18, color: isDark ? "#4b86ff" : "#0d4fdb" }} />
           <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
             Meter Status
           </Typography>

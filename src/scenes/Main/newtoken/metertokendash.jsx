@@ -78,8 +78,8 @@ function ControlCard({ title, icon, controlType, drn, isDark }) {
           onClick={() => setDialogOpen(true)}
           sx={{
             textTransform: "none", fontSize: 12, fontWeight: 600, px: 2.5, py: 0.7,
-            borderRadius: 2, bgcolor: isDark ? "#2563eb" : "#3b82f6",
-            "&:hover": { bgcolor: isDark ? "#1d4ed8" : "#2563eb" },
+            borderRadius: 2, bgcolor: isDark ? "#0d4fdb" : "#1f63f2",
+            "&:hover": { bgcolor: isDark ? "#0a3fb0" : "#0d4fdb" },
           }}
         >
           {loading ? "Saving..." : "Save"}

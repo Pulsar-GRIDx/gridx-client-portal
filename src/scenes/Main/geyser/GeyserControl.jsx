@@ -293,7 +293,7 @@ function GeyserControl() {
               bgcolor: timerActive ? "rgba(59,130,246,0.1)" : "rgba(100,116,139,0.1)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <TimerRoundedIcon sx={{ fontSize: 26, color: timerActive ? "#3b82f6" : "#64748b" }} />
+              <TimerRoundedIcon sx={{ fontSize: 26, color: timerActive ? "#1f63f2" : "#64748b" }} />
             </Box>
             <Box>
               <Typography sx={{ fontSize: 16, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
@@ -304,7 +304,7 @@ function GeyserControl() {
                 sx={{
                   mt: 0.5, fontWeight: 600, fontSize: 11,
                   bgcolor: timerActive ? "rgba(59,130,246,0.1)" : "rgba(100,116,139,0.1)",
-                  color: timerActive ? "#3b82f6" : "#64748b",
+                  color: timerActive ? "#1f63f2" : "#64748b",
                 }}
               />
             </Box>
@@ -341,7 +341,7 @@ function GeyserControl() {
                   <Button
                     fullWidth variant="contained" startIcon={<PlayArrowRoundedIcon />}
                     onClick={handleStartTimer} disabled={loading || (timerHours === 0 && timerMinutes === 0)}
-                    sx={{ bgcolor: "#3b82f6", "&:hover": { bgcolor: "#2563eb" }, borderRadius: 2 }}
+                    sx={{ bgcolor: "#1f63f2", "&:hover": { bgcolor: "#0d4fdb" }, borderRadius: 2 }}
                   >
                     Start Timer
                   </Button>
@@ -364,7 +364,7 @@ function GeyserControl() {
               bgcolor: isDark ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.05)",
               border: "1px solid rgba(59,130,246,0.2)",
             }}>
-              <Typography sx={{ fontSize: 13, color: isDark ? "#93c5fd" : "#2563eb" }}>
+              <Typography sx={{ fontSize: 13, color: isDark ? "#7aa9ff" : "#0d4fdb" }}>
                 Timer started at {new Date(timerStartedAt).toLocaleTimeString()} - Geyser will run for {timerHours}h {timerMinutes}m
               </Typography>
             </Paper>
@@ -430,7 +430,7 @@ function GeyserControl() {
                   sx={{
                     fontWeight: 600, fontSize: 12, cursor: "pointer",
                     bgcolor: newDays[idx] ? "rgba(59,130,246,0.15)" : (isDark ? "rgba(255,255,255,0.05)" : "#f1f5f9"),
-                    color: newDays[idx] ? "#3b82f6" : (isDark ? "#64748b" : "#94a3b8"),
+                    color: newDays[idx] ? "#1f63f2" : (isDark ? "#64748b" : "#94a3b8"),
                     border: `1px solid ${newDays[idx] ? "rgba(59,130,246,0.3)" : "transparent"}`,
                   }}
                 />
@@ -440,7 +440,7 @@ function GeyserControl() {
             <Button
               variant="contained" startIcon={scheduleLoading ? <CircularProgress size={16} color="inherit" /> : <AddRoundedIcon />}
               onClick={handleAddSchedule} disabled={scheduleLoading}
-              sx={{ bgcolor: "#3b82f6", "&:hover": { bgcolor: "#2563eb" }, borderRadius: 2 }}
+              sx={{ bgcolor: "#1f63f2", "&:hover": { bgcolor: "#0d4fdb" }, borderRadius: 2 }}
             >
               Add Schedule
             </Button>
@@ -465,7 +465,7 @@ function GeyserControl() {
                   }}>
                     <Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                        <ScheduleRoundedIcon sx={{ fontSize: 16, color: "#3b82f6" }} />
+                        <ScheduleRoundedIcon sx={{ fontSize: 16, color: "#1f63f2" }} />
                         <Typography sx={{ fontSize: 15, fontWeight: 600, color: isDark ? "#e2e8f0" : "#1e293b" }}>
                           {pad(s.start_hour)}:{pad(s.start_minute)} - {pad(s.end_hour)}:{pad(s.end_minute)}
                         </Typography>
@@ -479,7 +479,7 @@ function GeyserControl() {
                               bgcolor: (Array.isArray(s.days) ? s.days[idx] : false)
                                 ? "rgba(59,130,246,0.15)" : (isDark ? "rgba(255,255,255,0.03)" : "#f1f5f9"),
                               color: (Array.isArray(s.days) ? s.days[idx] : false)
-                                ? "#3b82f6" : (isDark ? "#475569" : "#cbd5e1"),
+                                ? "#1f63f2" : (isDark ? "#475569" : "#cbd5e1"),
                             }}
                           />
                         ))}

@@ -8,6 +8,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { customerAuthAPI } from "../../../services/api";
+import { mtc } from "../../../theme/theme";
 
 const STEPS = { EMAIL: 0, VERIFY: 1, RESET: 2, DONE: 3 };
 
@@ -29,7 +30,7 @@ function ForgotPassword() {
       borderRadius: 2, bgcolor: "rgba(255,255,255,0.06)",
       "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
       "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+      "&.Mui-focused fieldset": { borderColor: mtc.blue[400] },
     },
     "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
     "& .MuiOutlinedInput-input": { color: "#e2e8f0" },
@@ -115,7 +116,7 @@ function ForgotPassword() {
   return (
     <Box sx={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg, #0c1222 0%, #1a2744 50%, #0f172a 100%)",
+      background: "linear-gradient(160deg, #060911 0%, #0c1631 45%, #0a0f1e 100%)",
       px: 3,
     }}>
       <CssBaseline />
@@ -167,9 +168,9 @@ function ForgotPassword() {
               startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
               sx={{
                 mt: 1, borderRadius: 2, py: 1.3, fontWeight: 600,
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                boxShadow: "0 8px 25px rgba(59,130,246,0.3)",
-                "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" },
+                background: mtc.gradient,
+                boxShadow: `0 8px 25px ${mtc.glow}`,
+                "&:hover": { background: mtc.gradientHover },
               }}
             >
               {loading ? "Sending..." : "Send Verification Code"}
@@ -192,9 +193,9 @@ function ForgotPassword() {
               startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
               sx={{
                 mt: 1, borderRadius: 2, py: 1.3, fontWeight: 600,
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                boxShadow: "0 8px 25px rgba(59,130,246,0.3)",
-                "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" },
+                background: mtc.gradient,
+                boxShadow: `0 8px 25px ${mtc.glow}`,
+                "&:hover": { background: mtc.gradientHover },
               }}
             >
               {loading ? "Verifying..." : "Verify Code"}
@@ -258,9 +259,9 @@ function ForgotPassword() {
               onClick={() => navigate("/")}
               sx={{
                 mt: 2, borderRadius: 2, py: 1.3, fontWeight: 600,
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                boxShadow: "0 8px 25px rgba(59,130,246,0.3)",
-                "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" },
+                background: mtc.gradient,
+                boxShadow: `0 8px 25px ${mtc.glow}`,
+                "&:hover": { background: mtc.gradientHover },
               }}
             >
               Go to Login

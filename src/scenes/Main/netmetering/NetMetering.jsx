@@ -64,7 +64,7 @@ function PowerFlowAnimation({ activePower, isDark }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             animation: isNeutral ? "none" : "pulseGlow 2s ease-in-out infinite",
           }}>
-            <Typography sx={{ fontSize: 22 }}>{isExporting ? "\u{1F3E0}" : "⚡"}</Typography>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "\u{1F3E0}" : "âš¡"}</Typography>
           </Box>
           <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             {isExporting ? "HOME" : "GRID"}
@@ -103,7 +103,7 @@ function PowerFlowAnimation({ activePower, isDark }) {
             animation: isNeutral ? "none" : "pulseGlow 2s ease-in-out infinite",
             animationDelay: "1s",
           }}>
-            <Typography sx={{ fontSize: 22 }}>{isExporting ? "⚡" : "\u{1F3E0}"}</Typography>
+            <Typography sx={{ fontSize: 22 }}>{isExporting ? "âš¡" : "\u{1F3E0}"}</Typography>
           </Box>
           <Typography sx={{ fontSize: 10, color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             {isExporting ? "GRID" : "HOME"}
@@ -520,7 +520,7 @@ function NetMetering() {
           variant="fullWidth"
           sx={{
             borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
-            "& .MuiTabs-indicator": { bgcolor: "#3b82f6", height: 3 },
+            "& .MuiTabs-indicator": { bgcolor: "#1f63f2", height: 3 },
           }}
         >
           <Tab label="Meter Readings" icon={<SpeedRoundedIcon sx={{ fontSize: 18 }} />} iconPosition="start" sx={tabSx} />
@@ -601,7 +601,7 @@ function NetMetering() {
             </Typography>
             <Grid container spacing={2}>
               {[
-                { label: "Active Power", val: currentPower, unit: "W", color: "#3b82f6" },
+                { label: "Active Power", val: currentPower, unit: "W", color: "#1f63f2" },
                 { label: "Reactive Power", val: reactivePower, unit: "VAR", color: "#f59e0b" },
                 { label: "Apparent Power", val: apparentPower, unit: "VA", color: "#ec4899" },
                 { label: "Power Factor", val: powerFactor, unit: "", color: "#10b981" },
@@ -652,7 +652,7 @@ function NetMetering() {
               Active Power
             </Typography>
             {noData ? chartPlaceholder : (
-              <Chart type="line" height={380} options={make15minOpts(["#3b82f6"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
+              <Chart type="line" height={380} options={make15minOpts(["#1f63f2"], "W", (v) => v != null ? v.toFixed(1) + " W" : "N/A")} series={activeSeries} />
             )}
           </Paper>
 
@@ -819,7 +819,7 @@ function NetMetering() {
                 <PowerFlowBox icon={<TrendingDownRoundedIcon />} label="Total Imported" value={importKwh.toFixed(2)} unit="kWh" color="#f97316" isDark={isDark} />
               </Grid>
               <Grid item xs={4}>
-                <PowerFlowBox icon={<BoltRoundedIcon />} label="Active Power" value={currentPower} unit="W" color="#3b82f6" isDark={isDark} />
+                <PowerFlowBox icon={<BoltRoundedIcon />} label="Active Power" value={currentPower} unit="W" color="#1f63f2" isDark={isDark} />
               </Grid>
               <Grid item xs={4}>
                 <PowerFlowBox icon={<TrendingUpRoundedIcon />} label="Total Exported" value={exportKwh.toFixed(2)} unit="kWh" color="#22c55e" isDark={isDark} />
@@ -845,7 +845,7 @@ function NetMetering() {
               { label: "Total Imported", val: totalImportKwh, unit: "kWh", color: "#f97316" },
               { label: "Total Exported", val: totalExportKwh, unit: "kWh", color: "#22c55e" },
               { label: "Net Balance", val: Math.abs(totalNetKwh).toFixed(2), unit: "kWh", color: isExporting ? "#22c55e" : "#f97316" },
-              { label: "Readings", val: readingCount, unit: "total", color: "#3b82f6" },
+              { label: "Readings", val: readingCount, unit: "total", color: "#1f63f2" },
             ].map((item, i) => (
               <Grid item xs={6} sm={3} key={i}>
                 <Paper elevation={0} sx={cardSx}>

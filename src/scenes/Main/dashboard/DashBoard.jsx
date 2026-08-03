@@ -141,7 +141,7 @@ function PowerFlowAnimation({ activePower, isDark, voltage, importKwh, exportKwh
   const pw = Math.abs(ap);
   const speed = pw > 500 ? 1.5 : pw > 100 ? 2.0 : 2.6;
 
-  const gridColor = "#3b82f6";
+  const gridColor = "#1f63f2";
   const homeColor = isExporting ? "#22c55e" : "#f97316";
   const meterColor = "#8b5cf6";
   const idleColor = isDark ? "#475569" : "#94a3b8";
@@ -261,14 +261,14 @@ function PowerFlowAnimation({ activePower, isDark, voltage, importKwh, exportKwh
         <Box sx={{ textAlign: "center" }}>
           <Typography sx={{ fontSize: 10, color: isDark ? "#64748b" : "#94a3b8", mb: 0.2 }}>Lifetime Import</Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#f97316" }}>
-            {importKwh != null ? importKwh.toFixed(2) : "—"} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
+            {importKwh != null ? importKwh.toFixed(2) : "â€”"} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
           </Typography>
         </Box>
         <Box sx={{ width: 1, bgcolor: isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0" }} />
         <Box sx={{ textAlign: "center" }}>
           <Typography sx={{ fontSize: 10, color: isDark ? "#64748b" : "#94a3b8", mb: 0.2 }}>Lifetime Export</Typography>
           <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#22c55e" }}>
-            {exportKwh != null ? exportKwh.toFixed(2) : "—"} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
+            {exportKwh != null ? exportKwh.toFixed(2) : "â€”"} <span style={{ fontSize: 10, fontWeight: 400 }}>kWh</span>
           </Typography>
         </Box>
       </Box>
@@ -322,7 +322,7 @@ function EnergySummaryCard({ title, subtitle, totals, isDark }) {
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <Typography sx={{ fontSize: 14, fontWeight: 700, color: headerColor }}>
-          {title} — Energy Summary
+          {title} â€” Energy Summary
         </Typography>
         <Box sx={{
           px: 1.2, py: 0.3, borderRadius: 1.5,
@@ -665,7 +665,7 @@ function Dashboard() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={6} md={4}>
-          <StatCard title="Meter Units" value={unitsData || "0"} unit="kWh" icon={<ElectricMeterRoundedIcon />} color="#3b82f6" isDark={isDark} />
+          <StatCard title="Meter Units" value={unitsData || "0"} unit="kWh" icon={<ElectricMeterRoundedIcon />} color="#1f63f2" isDark={isDark} />
         </Grid>
         <Grid item xs={6} sm={6} md={4}>
           <StatCard title="Today's Net Usage" value={todayUsage} unit="kWh" icon={<BoltRoundedIcon />} color="#f97316" isDark={isDark} />
@@ -706,7 +706,7 @@ function Dashboard() {
             </Box>
             <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
               {[
-                { label: "Average / Hour", val: `${avgEnergy.toFixed(3)} kWh`, color: "#3b82f6" },
+                { label: "Average / Hour", val: `${avgEnergy.toFixed(3)} kWh`, color: "#1f63f2" },
                 { label: "Peak Hour", val: `${peakEnergy.toFixed(3)} kWh`, color: "#eab308" },
               ].map((s, i) => (
                 <Box key={i} sx={{
@@ -734,13 +734,13 @@ function Dashboard() {
             </Typography>
             {[
               { label: "Power", val: power, unit: "W", color: "#f97316" },
-              { label: "Voltage", val: voltage, unit: "V", color: "#3b82f6" },
+              { label: "Voltage", val: voltage, unit: "V", color: "#1f63f2" },
               { label: "Current", val: current, unit: "A", color: "#10b981" },
               { label: "Frequency", val: frequency, unit: "Hz", color: "#8b5cf6" },
               { label: "Voltage THD", val: thdData?.thd_voltage != null ? parseFloat(thdData.thd_voltage).toFixed(1) : "---", unit: "%", color: "#e879f9" },
               { label: "Current THD", val: thdData?.thd_current != null ? parseFloat(thdData.thd_current).toFixed(1) : "---", unit: "%", color: "#fb923c" },
               { label: "Displ. PF", val: thdData?.displacement_pf != null ? parseFloat(thdData.displacement_pf).toFixed(3) : "---", unit: "", color: "#34d399" },
-              { label: "Temperature", val: healthData?.temperature ? `${parseFloat(healthData.temperature).toFixed(1)}` : "---", unit: "°C", color: "#ef4444" },
+              { label: "Temperature", val: healthData?.temperature ? `${parseFloat(healthData.temperature).toFixed(1)}` : "---", unit: "Â°C", color: "#ef4444" },
               { label: "Signal", val: signalStrengthData ? `${signalStrengthData}` : healthData?.signal_strength ? `${healthData.signal_strength}` : "---", unit: signalStrengthData ? "dBm" : "%", color: "#eab308" },
             ].map((item, i, arr) => (
               <Box key={i} sx={{
@@ -778,7 +778,7 @@ function Dashboard() {
         const p15Opts = {
           chart: { type: "area", toolbar: { show: false }, background: "transparent" },
           stroke: { curve: "smooth", width: [2.5, 1.5] },
-          colors: ["#3b82f6", "#eab308"],
+          colors: ["#1f63f2", "#eab308"],
           fill: {
             type: ["gradient", "solid"],
             gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 90, 100] },
@@ -811,11 +811,11 @@ function Dashboard() {
           annotations: {
             yaxis: [{
               y: avgP,
-              borderColor: "#3b82f6",
+              borderColor: "#1f63f2",
               strokeDashArray: 4,
               label: {
                 text: `Avg: ${avgP.toFixed(0)} W`,
-                style: { color: "#3b82f6", background: "transparent", fontSize: "10px" },
+                style: { color: "#1f63f2", background: "transparent", fontSize: "10px" },
                 position: "right",
               },
             }],
@@ -829,7 +829,7 @@ function Dashboard() {
             border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
           }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <BoltRoundedIcon sx={{ fontSize: 20, color: "#3b82f6" }} />
+              <BoltRoundedIcon sx={{ fontSize: 20, color: "#1f63f2" }} />
               <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColor }}>
                 Power Profile (15-min intervals)
               </Typography>
@@ -845,7 +845,7 @@ function Dashboard() {
             </Box>
             <Box sx={{ display: "flex", gap: 3, mb: 2 }}>
               {[
-                { label: "Average Power", val: `${avgP.toFixed(1)} W`, color: "#3b82f6" },
+                { label: "Average Power", val: `${avgP.toFixed(1)} W`, color: "#1f63f2" },
                 { label: "Peak Power", val: `${maxP.toFixed(1)} W`, color: "#eab308" },
                 { label: "Avg Voltage", val: `${avgV.toFixed(1)} V`, color: "#10b981" },
               ].map((s, i) => (
@@ -959,7 +959,7 @@ function Dashboard() {
                 borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
                 display: "flex", alignItems: "center", gap: 1,
               }}>
-                <SolarPowerRoundedIcon sx={{ fontSize: 18, color: isDark ? "#60a5fa" : "#2563eb" }} />
+                <SolarPowerRoundedIcon sx={{ fontSize: 18, color: isDark ? "#4b86ff" : "#0d4fdb" }} />
                 <Typography sx={{ fontSize: 15, fontWeight: 700, color: headerColor }}>
                   Live Power Flow
                 </Typography>
@@ -1009,7 +1009,7 @@ function Dashboard() {
               <Grid item xs={12} md={6}>
                 <EnergySummaryCard
                   title={`${new Date().toLocaleString("default", { month: "long" })} ${new Date().getFullYear()}`}
-                  subtitle={`1 — ${new Date().getDate()} ${new Date().toLocaleString("default", { month: "short" })} ${new Date().getFullYear()}`}
+                  subtitle={`1 â€” ${new Date().getDate()} ${new Date().toLocaleString("default", { month: "short" })} ${new Date().getFullYear()}`}
                   totals={monthTotals}
                   isDark={isDark}
                 />
@@ -1314,7 +1314,7 @@ function Dashboard() {
           <Paper elevation={0} sx={{ p: 2.5, borderRadius: 3, bgcolor: cardBgY, border: cardBorderY }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", mb: 2, gap: 1 }}>
               <Typography sx={{ fontSize: 15, fontWeight: 600, color: headerColorY }}>
-                Monthly Cost Breakdown — {year} (N$)
+                Monthly Cost Breakdown â€” {year} (N$)
               </Typography>
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Chip size="small" label={`Import: N$ ${IMPORT_RATE.toFixed(2)}/kWh`} sx={{ fontSize: 10, fontWeight: 600, bgcolor: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.2)" }} />

@@ -140,8 +140,8 @@ function Settings() {
                   startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <LockResetRoundedIcon />}
                   sx={{
                     borderRadius: 2, py: 1.2, fontWeight: 600,
-                    background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                    "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" },
+                    background: "linear-gradient(135deg, #1f63f2, #0d4fdb)",
+                    "&:hover": { background: "linear-gradient(135deg, #0d4fdb, #0a3fb0)" },
                   }}
                 >
                   {loading ? "Processing..." : "Change Password"}

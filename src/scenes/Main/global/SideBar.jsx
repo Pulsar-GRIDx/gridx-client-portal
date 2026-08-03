@@ -3,10 +3,11 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
   Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Typography, Avatar, Divider, IconButton,
+  Typography, Avatar, Divider, IconButton, Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import AuthContext from "../../../context/AuthContext";
+import { mtc } from "../../../theme/theme";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import WaterDropRoundedIcon from "@mui/icons-material/WaterDropRounded";
@@ -17,8 +18,9 @@ import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import CellTowerRoundedIcon from "@mui/icons-material/CellTowerRounded";
+import RouterRoundedIcon from "@mui/icons-material/RouterRounded";
 
-const drawerWidth = 260;
+const drawerWidth = 264;
 
 const navItems = [
   { label: "Dashboard", path: "/", icon: <DashboardRoundedIcon /> },
@@ -27,6 +29,7 @@ const navItems = [
   { label: "Statistics", path: "/statistics", icon: <BarChartRoundedIcon /> },
   { label: "Net Metering", path: "/net-metering", icon: <SolarPowerRoundedIcon /> },
   { label: "Data Usage", path: "/data-usage", icon: <CellTowerRoundedIcon /> },
+  { label: "Network Products", path: "/network-products", icon: <RouterRoundedIcon />, badge: "New" },
   { divider: true },
   { label: "Profile", path: "/profile", icon: <PersonRoundedIcon /> },
   { label: "Settings", path: "/settings", icon: <SettingsRoundedIcon /> },
@@ -45,9 +48,9 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
     : "User";
   const userDRN = userInfo?.DRN || "";
 
-  const sidebarBg = isDark ? "#0c1222" : "#ffffff";
-  const activeBg = isDark ? "rgba(59,130,246,0.15)" : "rgba(37,99,235,0.08)";
-  const activeColor = isDark ? "#60a5fa" : "#2563eb";
+  const sidebarBg = isDark ? "#0a0f1e" : "#ffffff";
+  const activeBg = isDark ? "rgba(31,99,242,0.16)" : "rgba(13,79,219,0.08)";
+  const activeColor = isDark ? mtc.blue[300] : mtc.blue[600];
   const textColor = isDark ? "#cbd5e1" : "#334155";
   const hoverBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
 
@@ -55,10 +58,21 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", py: 2 }}>
       <Box sx={{ px: 2.5, mb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 48, height: "auto" }} />
-          <Typography sx={{ fontWeight: 700, fontSize: 18, color: isDark ? "#f1f5f9" : "#0f172a" }}>
-            GRIDx
-          </Typography>
+          <Box sx={{
+            width: 48, height: 48, borderRadius: 2.5, display: "flex", alignItems: "center", justifyContent: "center",
+            background: isDark ? "rgba(31,99,242,0.12)" : "rgba(13,79,219,0.06)",
+            border: `1px solid ${isDark ? "rgba(31,99,242,0.25)" : "rgba(13,79,219,0.15)"}`,
+          }}>
+            <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 30, height: "auto" }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontWeight: 800, fontSize: 18, lineHeight: 1.1, color: isDark ? "#f1f5f9" : "#0f172a", letterSpacing: "-0.01em" }}>
+              GRIDx
+            </Typography>
+            <Typography sx={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", color: activeColor, textTransform: "uppercase" }}>
+              Client Portal
+            </Typography>
+          </Box>
         </Box>
         <IconButton
           onClick={handleDrawerToggle}
@@ -78,7 +92,7 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
           <Avatar sx={{
             width: 38, height: 38,
             bgcolor: isDark ? "#1e3a5f" : "#dbeafe",
-            color: isDark ? "#60a5fa" : "#2563eb",
+            color: isDark ? "#4b86ff" : "#0d4fdb",
             fontSize: 15, fontWeight: 600,
           }}>
             {userName.charAt(0).toUpperCase()}
@@ -135,10 +149,21 @@ function Sidebar({ window, mobileOpen, handleDrawerToggle }) {
                     color: isActive ? activeColor : textColor,
                   }}
                 />
+                {item.badge && !isActive && (
+                  <Chip
+                    label={item.badge}
+                    size="small"
+                    sx={{
+                      height: 18, fontSize: 9.5, fontWeight: 700, ml: 1,
+                      bgcolor: isDark ? "rgba(16,185,129,0.15)" : "rgba(5,150,105,0.1)",
+                      color: isDark ? "#34d399" : "#059669",
+                    }}
+                  />
+                )}
                 {isActive && (
                   <Box sx={{
                     width: 4, height: 20, borderRadius: 2,
-                    bgcolor: activeColor, ml: 1,
+                    background: mtc.gradient, ml: 1,
                   }} />
                 )}
               </ListItemButton>

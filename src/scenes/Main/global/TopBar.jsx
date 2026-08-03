@@ -5,7 +5,7 @@ import {
   Alert, Tooltip, Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { ColorModeContext, tokens } from "../../../theme/theme";
+import { ColorModeContext, tokens, mtc } from "../../../theme/theme";
 import { useNotificationData } from "../Data/getNotificationsData";
 import { useData } from "../Data/getData";
 import AuthContext from "../../../context/AuthContext";
@@ -16,7 +16,7 @@ import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
 import SignalCellularAltRoundedIcon from "@mui/icons-material/SignalCellularAltRounded";
 import SignalCellular0BarRoundedIcon from "@mui/icons-material/SignalCellular0BarRounded";
 
-const drawerWidth = 260;
+const drawerWidth = 264;
 
 function TopBar({ handleDrawerToggle }) {
   const theme = useTheme();
@@ -39,13 +39,17 @@ function TopBar({ handleDrawerToggle }) {
       sx={{
         width: { sm: `calc(100% - ${drawerWidth}px)` },
         ml: { sm: `${drawerWidth}px` },
-        bgcolor: isDark ? "rgba(15, 23, 42, 0.85)" : "rgba(255, 255, 255, 0.85)",
-        backdropFilter: "blur(12px)",
-        borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#e2e8f0"}`,
+        bgcolor: isDark ? "rgba(10, 15, 30, 0.8)" : "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "blur(14px)",
+        borderBottom: `1px solid ${isDark ? "rgba(148,163,184,0.1)" : "#e2e8f0"}`,
         color: isDark ? "#f1f5f9" : "#0f172a",
+        "&::after": {
+          content: '""', position: "absolute", left: 0, right: 0, bottom: -1, height: 2,
+          background: mtc.gradient, opacity: isDark ? 0.6 : 0.4,
+        },
       }}
     >
-      <Toolbar sx={{ minHeight: "56px !important", px: { xs: 1.5, sm: 2.5 } }}>
+      <Toolbar sx={{ minHeight: "60px !important", px: { xs: 1.5, sm: 2.5 } }}>
         <IconButton
           edge="start"
           onClick={handleDrawerToggle}
@@ -55,7 +59,7 @@ function TopBar({ handleDrawerToggle }) {
         </IconButton>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
             GRIDx Portal
           </Typography>
           {drn && (
@@ -64,10 +68,10 @@ function TopBar({ handleDrawerToggle }) {
               size="small"
               sx={{
                 display: { xs: "none", md: "flex" },
-                fontSize: 11, fontFamily: "monospace", fontWeight: 500, height: 24,
-                bgcolor: isDark ? "rgba(59,130,246,0.12)" : "rgba(37,99,235,0.08)",
-                color: isDark ? "#60a5fa" : "#2563eb",
-                border: "none",
+                fontSize: 11, fontFamily: "monospace", fontWeight: 600, height: 24,
+                bgcolor: isDark ? "rgba(31,99,242,0.14)" : "rgba(13,79,219,0.08)",
+                color: isDark ? mtc.blue[300] : mtc.blue[600],
+                border: `1px solid ${isDark ? "rgba(31,99,242,0.25)" : "rgba(13,79,219,0.15)"}`,
               }}
             />
           )}

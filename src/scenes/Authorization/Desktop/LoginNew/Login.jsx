@@ -5,6 +5,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../../../context/AuthContext";
+import { mtc } from "../../../../theme/theme";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
@@ -48,7 +49,7 @@ function LoginDesktop() {
     }
     if (!EMAIL_REGEX.test(email)) { setLocalError("Invalid email address"); return; }
     if (!DRN_REGEX.test(drn)) { setLocalError("DRN must start with 0260 followed by 12 digits"); return; }
-    if (phone.replace(/[\s\-\(\)]/g, "").length < 8) { setLocalError("Please enter a valid phone number"); return; }
+    if (phone.replace(/[\s\-()]/g, "").length < 8) { setLocalError("Please enter a valid phone number"); return; }
     if (password.length < 6) { setLocalError("Password must be at least 6 characters"); return; }
     if (password !== confirmPwd) { setLocalError("Passwords do not match"); return; }
     setLoading(true);
@@ -64,7 +65,7 @@ function LoginDesktop() {
       borderRadius: 2, bgcolor: "rgba(255,255,255,0.06)",
       "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
       "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+      "&.Mui-focused fieldset": { borderColor: mtc.blue[400] },
     },
     "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
     "& .MuiOutlinedInput-input": { color: "#e2e8f0" },
@@ -73,18 +74,18 @@ function LoginDesktop() {
   return (
     <Box sx={{
       minHeight: "100vh", display: "flex",
-      background: "linear-gradient(135deg, #0c1222 0%, #1a2744 50%, #0f172a 100%)",
+      background: "linear-gradient(160deg, #060911 0%, #0c1631 45%, #0a0f1e 100%)",
     }}>
       <Box sx={{
         display: { xs: "none", md: "flex" },
         flex: 1, alignItems: "center", justifyContent: "center",
-        background: "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.05))",
+        background: `linear-gradient(135deg, ${mtc.glowSoft}, rgba(16,185,129,0.04))`,
         position: "relative", overflow: "hidden",
       }}>
         <Box sx={{
-          position: "absolute", width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)",
-          top: "20%", left: "30%",
+          position: "absolute", width: 420, height: 420, borderRadius: "50%",
+          background: `radial-gradient(circle, ${mtc.glow} 0%, transparent 70%)`,
+          top: "18%", left: "28%", filter: "blur(10px)",
         }} />
         <Box sx={{
           position: "absolute", width: 300, height: 300, borderRadius: "50%",
@@ -93,9 +94,9 @@ function LoginDesktop() {
         }} />
         <Box sx={{ textAlign: "center", zIndex: 1, px: 6 }}>
           <Box sx={{ mx: "auto", mb: 3, display: "flex", justifyContent: "center" }}>
-            <img src="/meter-logo.png" alt="GRIDx Meter" style={{ width: 140, height: "auto", filter: "drop-shadow(0 20px 40px rgba(59,130,246,0.3))" }} />
+            <img src="/meter-logo.png" alt="GRIDx Meter" style={{ width: 140, height: "auto", filter: `drop-shadow(0 20px 40px ${mtc.glow})` }} />
           </Box>
-          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f1f5f9", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif" }}>
+          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f1f5f9", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "-0.02em" }}>
             GRIDx Portal
           </Typography>
           <Typography sx={{ fontSize: 16, color: "#94a3b8", maxWidth: 380, mx: "auto", lineHeight: 1.6 }}>
@@ -108,7 +109,7 @@ function LoginDesktop() {
               { val: "Smart", label: "Control" },
             ].map((item, i) => (
               <Box key={i} sx={{ textAlign: "center" }}>
-                <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#60a5fa" }}>{item.val}</Typography>
+                <Typography sx={{ fontSize: 22, fontWeight: 700, color: mtc.blue[300] }}>{item.val}</Typography>
                 <Typography sx={{ fontSize: 12, color: "#64748b" }}>{item.label}</Typography>
               </Box>
             ))}
@@ -224,7 +225,7 @@ function LoginDesktop() {
                 <Link
                   component="button" type="button"
                   onClick={() => navigate("/forgot-password")}
-                  sx={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", "&:hover": { color: "#93c5fd" } }}
+                  sx={{ fontSize: 12, color: mtc.blue[300], textDecoration: "none", "&:hover": { color: mtc.blue[200] } }}
                 >
                   Forgot password?
                 </Link>
@@ -237,9 +238,9 @@ function LoginDesktop() {
               startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isSignUp ? <PersonAddRoundedIcon /> : <LoginRoundedIcon />)}
               sx={{
                 mt: 1, borderRadius: 2, py: 1.3, fontWeight: 600, fontSize: 15,
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                boxShadow: "0 8px 25px rgba(59,130,246,0.3)",
-                "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)", boxShadow: "0 12px 30px rgba(59,130,246,0.4)" },
+                background: mtc.gradient,
+                boxShadow: `0 8px 25px ${mtc.glow}`,
+                "&:hover": { background: mtc.gradientHover, boxShadow: `0 12px 30px ${mtc.glow}` },
               }}
             >
               {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
@@ -251,7 +252,7 @@ function LoginDesktop() {
             <Link
               component="button"
               onClick={() => { setIsSignUp(!isSignUp); setLocalError(""); }}
-              sx={{ color: "#60a5fa", fontWeight: 600, textDecoration: "none", "&:hover": { color: "#93c5fd" } }}
+              sx={{ color: mtc.blue[300], fontWeight: 600, textDecoration: "none", "&:hover": { color: mtc.blue[200] } }}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </Link>

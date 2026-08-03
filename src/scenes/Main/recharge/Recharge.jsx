@@ -185,8 +185,8 @@ function Recharge() {
                 startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <SendRoundedIcon />}
                 sx={{
                   borderRadius: 2, py: 1.3, fontWeight: 600,
-                  background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                  "&:hover": { background: "linear-gradient(135deg, #2563eb, #1d4ed8)" },
+                  background: "linear-gradient(135deg, #1f63f2, #0d4fdb)",
+                  "&:hover": { background: "linear-gradient(135deg, #0d4fdb, #0a3fb0)" },
                 }}
               >
                 {loading ? "Sending..." : "Send Token"}
@@ -205,7 +205,7 @@ function Recharge() {
                     bgcolor: isDark ? "rgba(59,130,246,0.2)" : "rgba(37,99,235,0.1)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: isDark ? "#60a5fa" : "#2563eb" }}>{i + 1}</Typography>
+                    <Typography sx={{ fontSize: 11, fontWeight: 700, color: isDark ? "#4b86ff" : "#0d4fdb" }}>{i + 1}</Typography>
                   </Box>
                   <Typography sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", lineHeight: 1.6 }}>{step}</Typography>
                 </Box>
@@ -329,7 +329,7 @@ function Recharge() {
                         {t.amount || "---"}
                       </TableCell>
                       <TableCell sx={{ borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f8fafc" }}>
-                        <Chip label={t.type || "Purchase"} size="small" sx={{ fontSize: 10, fontWeight: 600, bgcolor: isDark ? "rgba(59,130,246,0.1)" : "rgba(37,99,235,0.08)", color: isDark ? "#60a5fa" : "#2563eb" }} />
+                        <Chip label={t.type || "Purchase"} size="small" sx={{ fontSize: 10, fontWeight: 600, bgcolor: isDark ? "rgba(59,130,246,0.1)" : "rgba(37,99,235,0.08)", color: isDark ? "#4b86ff" : "#0d4fdb" }} />
                       </TableCell>
                       <TableCell sx={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", borderColor: isDark ? "rgba(255,255,255,0.04)" : "#f8fafc" }}>
                         {t.date_time ? new Date(t.date_time).toLocaleString() : t.date || "---"}
@@ -403,7 +403,7 @@ function Recharge() {
                       <TableRow>
                         {["Tariff", "Rate (N$/kWh)", "kWh", "Cost (N$)"].map(h => (
                           <TableCell key={h} align={h === "Tariff" ? "left" : "right"} sx={{
-                            fontWeight: 600, fontSize: 11, color: isDark ? "#60a5fa" : "#2563eb",
+                            fontWeight: 600, fontSize: 11, color: isDark ? "#4b86ff" : "#0d4fdb",
                             borderColor: isDark ? "rgba(59,130,246,0.2)" : "rgba(37,99,235,0.15)",
                             ...(h === "Tariff" ? { pl: 0 } : {}),
                             ...(h === "Cost (N$)" ? { pr: 0 } : {}),

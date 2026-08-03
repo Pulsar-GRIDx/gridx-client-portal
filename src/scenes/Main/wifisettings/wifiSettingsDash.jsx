@@ -36,11 +36,11 @@ const WifiSettingsDash = () => {
         allowScrollButtonsMobile
         sx={{
           mb: 3,
-          "& .MuiTabs-indicator": { bgcolor: isDark ? "#60a5fa" : "#2563eb" },
+          "& .MuiTabs-indicator": { bgcolor: isDark ? "#4b86ff" : "#0d4fdb" },
           "& .MuiTab-root": {
             textTransform: "none", fontSize: 12, fontWeight: 500, minHeight: 44,
             color: isDark ? "#94a3b8" : "#64748b",
-            "&.Mui-selected": { color: isDark ? "#60a5fa" : "#2563eb" },
+            "&.Mui-selected": { color: isDark ? "#4b86ff" : "#0d4fdb" },
           },
         }}
       >

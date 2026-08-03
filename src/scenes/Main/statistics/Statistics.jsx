@@ -45,7 +45,7 @@ function Statistics() {
 
   const currentRate = parseFloat(tariffInfo?.currentRate || 0);
 
-  const chartColors = ["#3b82f6", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#eab308"];
+  const chartColors = ["#1f63f2", "#10b981", "#f97316", "#8b5cf6", "#ef4444", "#eab308"];
   const baseChartOpts = {
     chart: { toolbar: { show: false }, background: "transparent" },
     fill: { type: "solid", opacity: 0.85 },
@@ -118,7 +118,7 @@ function Statistics() {
 
   const headerCellSx = {
     fontWeight: 600, fontSize: 11,
-    color: isDark ? "#60a5fa" : "#2563eb",
+    color: isDark ? "#4b86ff" : "#0d4fdb",
     borderColor: isDark ? "rgba(59,130,246,0.2)" : "rgba(37,99,235,0.15)",
   };
 
@@ -141,7 +141,7 @@ function Statistics() {
               color: isDark ? "#94a3b8" : "#64748b",
               "&.Mui-selected": {
                 bgcolor: isDark ? "rgba(59,130,246,0.15)" : "rgba(37,99,235,0.08)",
-                color: isDark ? "#60a5fa" : "#2563eb",
+                color: isDark ? "#4b86ff" : "#0d4fdb",
                 borderColor: isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.2)",
               },
             },
@@ -220,7 +220,7 @@ function Statistics() {
                           <TableCell align="right" sx={{ ...cellSx, color: isDark ? "#94a3b8" : "#64748b" }}>
                             {row.avgPower.toFixed(1)}
                           </TableCell>
-                          <TableCell align="right" sx={{ ...cellSx, fontWeight: 600, color: hasUsage ? (isDark ? "#60a5fa" : "#2563eb") : (isDark ? "#475569" : "#cbd5e1") }}>
+                          <TableCell align="right" sx={{ ...cellSx, fontWeight: 600, color: hasUsage ? (isDark ? "#4b86ff" : "#0d4fdb") : (isDark ? "#475569" : "#cbd5e1") }}>
                             {row.kwh.toFixed(4)}
                           </TableCell>
                           <TableCell align="right" sx={{ ...cellSx, fontWeight: 600, color: hasUsage ? (isDark ? "#34d399" : "#059669") : (isDark ? "#475569" : "#cbd5e1") }}>
@@ -234,7 +234,7 @@ function Statistics() {
                         Total
                       </TableCell>
                       <TableCell sx={{ borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }} />
-                      <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: isDark ? "#60a5fa" : "#2563eb", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
+                      <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: isDark ? "#4b86ff" : "#0d4fdb", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
                         {totalKwh.toFixed(4)}
                       </TableCell>
                       <TableCell align="right" sx={{ ...cellSx, fontWeight: 700, color: "#22c55e", borderTop: `2px solid ${isDark ? "rgba(59,130,246,0.3)" : "rgba(37,99,235,0.15)"}`, borderBottom: "none" }}>
@@ -468,7 +468,7 @@ function Statistics() {
           const weekKwh = Array.isArray(weekArr) ? weekArr.reduce((s, v) => s + (parseFloat(v) || 0), 0) : 0;
           const monthKwh = parseFloat(timeperiodsEnergy?.month || 0);
           return [
-            { label: "Today", kwh: todayKwh, color: "#3b82f6" },
+            { label: "Today", kwh: todayKwh, color: "#1f63f2" },
             { label: "This Week", kwh: weekKwh, color: "#10b981" },
             { label: "This Month", kwh: monthKwh, color: "#f97316" },
           ].map((item, i) => (
