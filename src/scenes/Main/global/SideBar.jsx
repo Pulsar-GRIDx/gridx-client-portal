@@ -19,6 +19,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import CellTowerRoundedIcon from "@mui/icons-material/CellTowerRounded";
 import RouterRoundedIcon from "@mui/icons-material/RouterRounded";
+import SettingsEthernetRoundedIcon from "@mui/icons-material/SettingsEthernetRounded";
 
 const drawerWidth = 264;
 
@@ -30,6 +31,7 @@ const navItems = [
   { label: "Net Metering", path: "/net-metering", icon: <SolarPowerRoundedIcon /> },
   { label: "Data Usage", path: "/data-usage", icon: <CellTowerRoundedIcon /> },
   { label: "Network Products", path: "/network-products", icon: <RouterRoundedIcon />, badge: "New" },
+  { label: "Router", path: "/router", icon: <SettingsEthernetRoundedIcon />, badge: "New" },
   { divider: true },
   { label: "Profile", path: "/profile", icon: <PersonRoundedIcon /> },
   { label: "Settings", path: "/settings", icon: <SettingsRoundedIcon /> },

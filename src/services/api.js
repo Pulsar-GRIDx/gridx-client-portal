@@ -1,4 +1,4 @@
-const API_BASE = "https://gridx-meters.com/cb";
+export const API_BASE = "https://gridx-meters.com/cb";
 
 function getHeaders() {
   const token = sessionStorage.getItem("Token");

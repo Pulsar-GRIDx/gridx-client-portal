@@ -12,6 +12,7 @@ import NetMetering from "../scenes/Main/netmetering/NetMetering";
 import Settings from "../scenes/Main/settings/Settings";
 import DataUsage from "../scenes/Main/datausage/DataUsage";
 import NetworkProducts from "../scenes/Main/networkproducts/NetworkProducts";
+import RouterDash from "../scenes/Main/router/RouterDash";
 import NotFound from "./NotFound";
 import DataProvider from "../scenes/Main/Data/getData";
 import NotificationDataProvider from "../scenes/Main/Data/getNotificationsData";
@@ -49,6 +50,7 @@ const MainRoutes = () => {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/data-usage" element={<DataUsage />} />
                 <Route path="/network-products" element={<NetworkProducts />} />
+                <Route path="/router" element={<RouterDash />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>
