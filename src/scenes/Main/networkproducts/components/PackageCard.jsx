@@ -88,10 +88,14 @@ export default function PackageCard({ pkg, category }) {
         </Box>
         {!pkg.verified && (
           <Chip
-            icon={<WarningAmberRoundedIcon sx={{ fontSize: 13 }} />}
+            icon={<WarningAmberRoundedIcon sx={{ fontSize: "13px !important", color: "inherit" }} />}
             label="Confirm price"
             size="small"
-            sx={{ height: 22, fontSize: 10, bgcolor: "rgba(245,158,11,0.15)", color: "#f59e0b", fontWeight: 700 }}
+            sx={{
+              height: 22, fontSize: 10, fontWeight: 700,
+              bgcolor: isDark ? "rgba(148,163,184,0.16)" : "rgba(100,116,139,0.12)",
+              color: isDark ? "#cbd5e1" : "#475569",
+            }}
           />
         )}
       </Box>

@@ -18,13 +18,15 @@ export const categories = [
     emoji: "📶",
     tagline: "MTC Aweh prepaid bundles",
     iconAsset: null, // no official per-tier Aweh icon published — Material icon used instead
+    // Bright sky blue — MTC brand palette, on-brand but distinct from the
+    // other two families' blues.
     accent: {
-      solid: "#f97316",
-      light: "#fdba74",
-      dark: "#c2410c",
-      gradient: "linear-gradient(135deg, #fb923c 0%, #ea580c 100%)",
-      glow: "rgba(249, 115, 22, 0.35)",
-      glowSoft: "rgba(249, 115, 22, 0.12)",
+      solid: "#0ea5e9",
+      light: "#7dd3fc",
+      dark: "#0369a1",
+      gradient: "linear-gradient(135deg, #38bdf8 0%, #0369a1 100%)",
+      glow: "rgba(14, 165, 233, 0.35)",
+      glowSoft: "rgba(14, 165, 233, 0.12)",
     },
   },
   {
@@ -35,13 +37,14 @@ export const categories = [
     tagline: "MTC Spectra fixed wireless broadband",
     iconAsset: brandAssets.spectraTower, // official MTC Spectra illustration, recoloured to white on the gradient badge
     iconAssetInvert: true,
+    // Core MTC royal blue.
     accent: {
-      solid: "#a855f7",
-      light: "#d8b4fe",
-      dark: "#7e22ce",
-      gradient: "linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)",
-      glow: "rgba(168, 85, 247, 0.35)",
-      glowSoft: "rgba(168, 85, 247, 0.12)",
+      solid: "#2563eb",
+      light: "#93c5fd",
+      dark: "#1e40af",
+      gradient: "linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)",
+      glow: "rgba(37, 99, 235, 0.35)",
+      glowSoft: "rgba(37, 99, 235, 0.12)",
     },
   },
   {
@@ -52,13 +55,19 @@ export const categories = [
     tagline: "MTC Spectra fibre-to-the-home",
     iconAsset: brandAssets.spectraTower, // same official MTC Spectra illustration — MTC doesn't publish a distinct Fibre-only mark
     iconAssetInvert: true,
+    // Deep navy blue — the "premium/fastest tier" end of the same blue family.
+    // Note: gradient deliberately starts brighter than `solid`/`dark` — a
+    // gradient with both stops this dark caused a faint rendering seam on
+    // the large clipped price text (Chromium background-clip:text artifact)
+    // and read poorly against the dark card regardless; badges/borders still
+    // use `solid`/`dark` at low opacity where that's not an issue.
     accent: {
-      solid: "#10b981",
-      light: "#6ee7b7",
-      dark: "#047857",
-      gradient: "linear-gradient(135deg, #34d399 0%, #047857 100%)",
-      glow: "rgba(16, 185, 129, 0.35)",
-      glowSoft: "rgba(16, 185, 129, 0.12)",
+      solid: "#1e3a8a",
+      light: "#93b4ff",
+      dark: "#0a1740",
+      gradient: "linear-gradient(135deg, #60a5fa 0%, #1e3a8a 100%)",
+      glow: "rgba(30, 58, 138, 0.4)",
+      glowSoft: "rgba(30, 58, 138, 0.14)",
     },
   },
 ];
