@@ -10,6 +10,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import PersonAddRoundedIcon from "@mui/icons-material/PersonAddRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DRN_REGEX = /^0260\d{12}$/;
@@ -62,85 +63,80 @@ function LoginDesktop() {
 
   const inputSx = {
     "& .MuiOutlinedInput-root": {
-      borderRadius: 2, bgcolor: "rgba(255,255,255,0.06)",
-      "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-      "&:hover fieldset": { borderColor: "rgba(255,255,255,0.2)" },
-      "&.Mui-focused fieldset": { borderColor: mtc.blue[400] },
+      borderRadius: 2.5, bgcolor: "#f8fafc",
+      "& fieldset": { borderColor: "#e2e8f0" },
+      "&:hover fieldset": { borderColor: "#cbd5e1" },
+      "&.Mui-focused fieldset": { borderColor: mtc.blue[500], borderWidth: 1.5 },
     },
-    "& .MuiInputLabel-root": { color: "rgba(255,255,255,0.5)" },
-    "& .MuiOutlinedInput-input": { color: "#e2e8f0" },
+    "& .MuiInputLabel-root": { color: "#64748b" },
+    "& .MuiInputLabel-root.Mui-focused": { color: mtc.blue[600] },
+    "& .MuiOutlinedInput-input": { color: "#0f172a" },
   };
 
   return (
     <Box sx={{
-      minHeight: "100vh", display: "flex",
-      background: "linear-gradient(160deg, #060911 0%, #0c1631 45%, #0a0f1e 100%)",
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      position: "relative", overflow: "hidden", px: 3, py: 5,
+      background: `linear-gradient(135deg, ${mtc.blue[700]} 0%, ${mtc.blue[500]} 55%, ${mtc.blue[400]} 100%)`,
     }}>
+      {/* Simple decorative texture — a soft dot grid evoking a network/meter grid */}
       <Box sx={{
-        display: { xs: "none", md: "flex" },
-        flex: 1, alignItems: "center", justifyContent: "center",
-        background: `linear-gradient(135deg, ${mtc.glowSoft}, rgba(16,185,129,0.04))`,
-        position: "relative", overflow: "hidden",
-      }}>
-        <Box sx={{
-          position: "absolute", width: 420, height: 420, borderRadius: "50%",
-          background: `radial-gradient(circle, ${mtc.glow} 0%, transparent 70%)`,
-          top: "18%", left: "28%", filter: "blur(10px)",
-        }} />
-        <Box sx={{
-          position: "absolute", width: 300, height: 300, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%)",
-          bottom: "20%", right: "20%",
-        }} />
-        <Box sx={{ textAlign: "center", zIndex: 1, px: 6 }}>
-          <Box sx={{ mx: "auto", mb: 3, display: "flex", justifyContent: "center" }}>
-            <img src="/meter-logo.png" alt="GRIDx Meter" style={{ width: 140, height: "auto", filter: `drop-shadow(0 20px 40px ${mtc.glow})` }} />
+        position: "absolute", inset: 0,
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.16) 1.5px, transparent 1.5px)",
+        backgroundSize: "28px 28px",
+        maskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 90%)",
+        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 90%)",
+      }} />
+
+      {/* Ambient drifting glow — subtle, slow, purely decorative */}
+      <Box sx={{
+        position: "absolute", width: 480, height: 480, borderRadius: "50%", top: "-12%", left: "-8%",
+        background: "radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 70%)",
+        animation: "loginDrift 14s ease-in-out infinite",
+        "@keyframes loginDrift": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(30px, 20px)" },
+        },
+      }} />
+      <Box sx={{
+        position: "absolute", width: 380, height: 380, borderRadius: "50%", bottom: "-10%", right: "-6%",
+        background: `radial-gradient(circle, ${mtc.blue[300]}55 0%, transparent 70%)`,
+        animation: "loginDrift2 18s ease-in-out infinite",
+        "@keyframes loginDrift2": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(-25px, -15px)" },
+        },
+      }} />
+
+      {/* Brand lockup, above the card */}
+      <Box sx={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 420 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 3.5 }}>
+          <Box sx={{
+            width: 40, height: 40, borderRadius: 2.5, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            bgcolor: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.3)",
+          }}>
+            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 22 }} />
           </Box>
-          <Typography sx={{ fontSize: 36, fontWeight: 800, color: "#f1f5f9", mb: 1.5, fontFamily: "Inter, system-ui, sans-serif", letterSpacing: "-0.02em" }}>
-            GRIDx Portal
+          <Typography sx={{ fontSize: 21, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+            GRIDx
           </Typography>
-          <Typography sx={{ fontSize: 16, color: "#94a3b8", maxWidth: 380, mx: "auto", lineHeight: 1.6 }}>
-            Smart energy management at your fingertips. Monitor, control, and optimize your electricity usage.
-          </Typography>
-          <Box sx={{ mt: 5, display: "flex", justifyContent: "center", gap: 4 }}>
-            {[
-              { val: "24/7", label: "Monitoring" },
-              { val: "Real-time", label: "Data" },
-              { val: "Smart", label: "Control" },
-            ].map((item, i) => (
-              <Box key={i} sx={{ textAlign: "center" }}>
-                <Typography sx={{ fontSize: 22, fontWeight: 700, color: mtc.blue[300] }}>{item.val}</Typography>
-                <Typography sx={{ fontSize: 12, color: "#64748b" }}>{item.label}</Typography>
-              </Box>
-            ))}
-          </Box>
         </Box>
-      </Box>
 
-      <Box sx={{
-        width: { xs: "100%", md: 480 }, display: "flex", alignItems: "center",
-        justifyContent: "center", px: { xs: 3, sm: 5 },
-      }}>
-        <Box sx={{ width: "100%", maxWidth: 400 }}>
-          <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1.5, mb: 4, justifyContent: "center" }}>
-            <img src="/meter-logo-small.png" alt="GRIDx" style={{ width: 36, height: "auto" }} />
-            <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9" }}>GRIDx</Typography>
-          </Box>
-
-          <Typography sx={{ fontSize: 26, fontWeight: 700, color: "#f1f5f9", mb: 0.5 }}>
-            {isSignUp ? "Create Account" : "Welcome back"}
+        {/* Card */}
+        <Box sx={{
+          width: "100%", bgcolor: "#fff", borderRadius: 4, p: { xs: 3, sm: 4.5 },
+          boxShadow: "0 30px 60px -20px rgba(10,23,64,0.45)",
+        }}>
+          <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#0a1740", mb: 0.5, letterSpacing: "-0.01em" }}>
+            {isSignUp ? "Create your account" : "Welcome back"}
           </Typography>
-          <Typography sx={{ fontSize: 14, color: "#64748b", mb: 3 }}>
+          <Typography sx={{ fontSize: 13.5, color: "#64748b", mb: 3 }}>
             {isSignUp ? "Register to access your meter dashboard" : "Sign in to your GRIDx account"}
           </Typography>
 
           {errMsg && (
-            <Alert severity="error" sx={{
-              mb: 2, borderRadius: 2,
-              bgcolor: "rgba(239,68,68,0.1)", color: "#fca5a5",
-              "& .MuiAlert-icon": { color: "#ef4444" },
-              border: "1px solid rgba(239,68,68,0.2)",
-            }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
               {errMsg}
             </Alert>
           )}
@@ -182,7 +178,6 @@ function LoginDesktop() {
                 sx={inputSx} required
                 inputProps={{ inputMode: "tel" }}
                 helperText="Must be an authorized number on the meter"
-                FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.35)", ml: 0.5 } }}
               />
             )}
             {!isSignUp && !drn && (
@@ -190,7 +185,7 @@ function LoginDesktop() {
                 <Link
                   component="button" type="button"
                   onClick={() => setDrn(" ")}
-                  sx={{ fontSize: 12, color: "#64748b", textDecoration: "none", "&:hover": { color: "#94a3b8" } }}
+                  sx={{ fontSize: 12, color: "#94a3b8", textDecoration: "none", "&:hover": { color: "#64748b" } }}
                 >
                   Login with DRN
                 </Link>
@@ -204,7 +199,7 @@ function LoginDesktop() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: "rgba(255,255,255,0.4)" }}>
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: "#94a3b8" }}>
                       {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
@@ -225,7 +220,7 @@ function LoginDesktop() {
                 <Link
                   component="button" type="button"
                   onClick={() => navigate("/forgot-password")}
-                  sx={{ fontSize: 12, color: mtc.blue[300], textDecoration: "none", "&:hover": { color: mtc.blue[200] } }}
+                  sx={{ fontSize: 12, color: mtc.blue[600], fontWeight: 600, textDecoration: "none", "&:hover": { color: mtc.blue[700] } }}
                 >
                   Forgot password?
                 </Link>
@@ -237,10 +232,10 @@ function LoginDesktop() {
               disabled={loading}
               startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isSignUp ? <PersonAddRoundedIcon /> : <LoginRoundedIcon />)}
               sx={{
-                mt: 1, borderRadius: 2, py: 1.3, fontWeight: 600, fontSize: 15,
+                mt: 1, borderRadius: 2.5, py: 1.3, fontWeight: 700, fontSize: 15,
                 background: mtc.gradient,
-                boxShadow: `0 8px 25px ${mtc.glow}`,
-                "&:hover": { background: mtc.gradientHover, boxShadow: `0 12px 30px ${mtc.glow}` },
+                boxShadow: `0 10px 24px -6px ${mtc.glow}`,
+                "&:hover": { background: mtc.gradientHover, boxShadow: `0 14px 28px -6px ${mtc.glow}` },
               }}
             >
               {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
@@ -252,16 +247,16 @@ function LoginDesktop() {
             <Link
               component="button"
               onClick={() => { setIsSignUp(!isSignUp); setLocalError(""); }}
-              sx={{ color: mtc.blue[300], fontWeight: 600, textDecoration: "none", "&:hover": { color: mtc.blue[200] } }}
+              sx={{ color: mtc.blue[600], fontWeight: 700, textDecoration: "none", "&:hover": { color: mtc.blue[700] } }}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </Link>
           </Typography>
-
-          <Typography sx={{ textAlign: "center", mt: 4, fontSize: 11, color: "#334155" }}>
-            Powered by Pulsar Namibia
-          </Typography>
         </Box>
+
+        <Typography sx={{ textAlign: "center", mt: 3, fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+          Powered by Pulsar Namibia
+        </Typography>
       </Box>
     </Box>
   );
