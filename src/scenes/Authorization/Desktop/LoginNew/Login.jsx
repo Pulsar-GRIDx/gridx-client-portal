@@ -63,7 +63,7 @@ function LoginDesktop() {
 
   const inputSx = {
     "& .MuiOutlinedInput-root": {
-      borderRadius: 2.5, bgcolor: "#f8fafc",
+      borderRadius: 2, bgcolor: "#fff",
       "& fieldset": { borderColor: "#e2e8f0" },
       "&:hover fieldset": { borderColor: "#cbd5e1" },
       "&.Mui-focused fieldset": { borderColor: mtc.blue[500], borderWidth: 1.5 },
@@ -74,64 +74,78 @@ function LoginDesktop() {
   };
 
   return (
-    <Box sx={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      position: "relative", overflow: "hidden", px: 3, py: 5,
-      background: `linear-gradient(135deg, ${mtc.blue[700]} 0%, ${mtc.blue[500]} 55%, ${mtc.blue[400]} 100%)`,
-    }}>
-      {/* Simple decorative texture — a soft dot grid evoking a network/meter grid */}
-      <Box sx={{
-        position: "absolute", inset: 0,
-        backgroundImage: "radial-gradient(rgba(255,255,255,0.16) 1.5px, transparent 1.5px)",
-        backgroundSize: "28px 28px",
-        maskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 90%)",
-        WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 90%)",
-      }} />
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: { xs: "column", md: "row" }, bgcolor: "#fff" }}>
 
-      {/* Ambient drifting glow — subtle, slow, purely decorative */}
+      {/* Angled brand panel — signature shape instead of a plain rectangle,
+          bottom edge on mobile / right edge on desktop cuts on a diagonal. */}
       <Box sx={{
-        position: "absolute", width: 480, height: 480, borderRadius: "50%", top: "-12%", left: "-8%",
-        background: "radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 70%)",
-        animation: "loginDrift 14s ease-in-out infinite",
-        "@keyframes loginDrift": {
-          "0%, 100%": { transform: "translate(0, 0)" },
-          "50%": { transform: "translate(30px, 20px)" },
+        position: "relative", overflow: "hidden", flexShrink: 0,
+        width: { xs: "100%", md: "38%" },
+        height: { xs: 220, sm: 260, md: "auto" },
+        background: `linear-gradient(160deg, ${mtc.blue[600]} 0%, ${mtc.blue[800]} 100%)`,
+        clipPath: {
+          xs: "polygon(0 0, 100% 0, 100% 82%, 0 100%)",
+          md: "polygon(0 0, 100% 0, 82% 100%, 0 100%)",
         },
-      }} />
-      <Box sx={{
-        position: "absolute", width: 380, height: 380, borderRadius: "50%", bottom: "-10%", right: "-6%",
-        background: `radial-gradient(circle, ${mtc.blue[300]}55 0%, transparent 70%)`,
-        animation: "loginDrift2 18s ease-in-out infinite",
-        "@keyframes loginDrift2": {
-          "0%, 100%": { transform: "translate(0, 0)" },
-          "50%": { transform: "translate(-25px, -15px)" },
-        },
-      }} />
+      }}>
+        {/* Faint concentric signal rings behind the mark — quiet nod to "smart meter" without needing an illustration */}
+        <Box sx={{
+          position: "absolute", top: "38%", left: { xs: "50%", md: "38%" }, transform: "translate(-50%, -50%)",
+          width: 260, height: 260, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.14)",
+        }} />
+        <Box sx={{
+          position: "absolute", top: "38%", left: { xs: "50%", md: "38%" }, transform: "translate(-50%, -50%)",
+          width: 180, height: 180, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.16)",
+        }} />
+        <Box sx={{
+          position: "absolute", top: "38%", left: { xs: "50%", md: "38%" }, transform: "translate(-50%, -50%)",
+          width: 100, height: 100, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)",
+          animation: "loginPulse 2.6s ease-out infinite",
+          "@keyframes loginPulse": {
+            "0%": { transform: "translate(-50%, -50%) scale(1)", opacity: 0.9 },
+            "100%": { transform: "translate(-50%, -50%) scale(2.1)", opacity: 0 },
+          },
+        }} />
 
-      {/* Brand lockup, above the card */}
-      <Box sx={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", width: "100%", maxWidth: 420 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 3.5 }}>
+        <Box sx={{
+          position: "relative", zIndex: 1, height: "100%",
+          display: "flex", flexDirection: "column", justifyContent: "center",
+          px: { xs: 4, md: 5 }, py: { xs: 3, md: 0 },
+          alignItems: { xs: "center", md: "flex-start" }, textAlign: { xs: "center", md: "left" },
+        }}>
           <Box sx={{
-            width: 40, height: 40, borderRadius: 2.5, flexShrink: 0,
+            width: 52, height: 52, borderRadius: "16px", mb: 2.5,
             display: "flex", alignItems: "center", justifyContent: "center",
-            bgcolor: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.3)",
+            bgcolor: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.3)",
           }}>
-            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 22 }} />
+            <BoltRoundedIcon sx={{ color: "#fff", fontSize: 28 }} />
           </Box>
-          <Typography sx={{ fontSize: 21, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+          <Typography sx={{ fontSize: { xs: 24, md: 28 }, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em", mb: 1 }}>
             GRIDx
           </Typography>
+          <Typography sx={{
+            fontSize: 13.5, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, maxWidth: 260,
+            display: { xs: "none", sm: "block" },
+          }}>
+            Smart energy management for your prepaid meter — monitor, recharge, and stay in control.
+          </Typography>
         </Box>
+      </Box>
 
-        {/* Card */}
-        <Box sx={{
-          width: "100%", bgcolor: "#fff", borderRadius: 4, p: { xs: 3, sm: 4.5 },
-          boxShadow: "0 30px 60px -20px rgba(10,23,64,0.45)",
-        }}>
-          <Typography sx={{ fontSize: 24, fontWeight: 800, color: "#0a1740", mb: 0.5, letterSpacing: "-0.01em" }}>
+      {/* Form side — plain white, no floating card, generous whitespace.
+          Top-aligned on mobile (the panel above already anchors the top
+          visually, so true vertical centering pushes the form oddly low
+          and leaves a dead gap at the bottom); centered once there's no
+          stacked panel competing for attention on desktop. */}
+      <Box sx={{
+        flex: 1, display: "flex", alignItems: { xs: "flex-start", md: "center" }, justifyContent: "center",
+        px: { xs: 3, sm: 6 }, py: { xs: 4, md: 6 },
+      }}>
+        <Box sx={{ width: "100%", maxWidth: 380 }}>
+          <Typography sx={{ fontSize: 26, fontWeight: 800, color: "#0a1740", mb: 0.5, letterSpacing: "-0.01em" }}>
             {isSignUp ? "Create your account" : "Welcome back"}
           </Typography>
-          <Typography sx={{ fontSize: 13.5, color: "#64748b", mb: 3 }}>
+          <Typography sx={{ fontSize: 13.5, color: "#64748b", mb: 3.5 }}>
             {isSignUp ? "Register to access your meter dashboard" : "Sign in to your GRIDx account"}
           </Typography>
 
@@ -232,7 +246,7 @@ function LoginDesktop() {
               disabled={loading}
               startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isSignUp ? <PersonAddRoundedIcon /> : <LoginRoundedIcon />)}
               sx={{
-                mt: 1, borderRadius: 2.5, py: 1.3, fontWeight: 700, fontSize: 15,
+                mt: 1, borderRadius: 2, py: 1.3, fontWeight: 700, fontSize: 15,
                 background: mtc.gradient,
                 boxShadow: `0 10px 24px -6px ${mtc.glow}`,
                 "&:hover": { background: mtc.gradientHover, boxShadow: `0 14px 28px -6px ${mtc.glow}` },
@@ -252,11 +266,11 @@ function LoginDesktop() {
               {isSignUp ? "Sign In" : "Sign Up"}
             </Link>
           </Typography>
-        </Box>
 
-        <Typography sx={{ textAlign: "center", mt: 3, fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
-          Powered by Pulsar Namibia
-        </Typography>
+          <Typography sx={{ textAlign: "center", mt: 4, fontSize: 11, color: "#cbd5e1" }}>
+            Powered by Pulsar Namibia
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
