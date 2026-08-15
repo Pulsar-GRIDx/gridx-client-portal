@@ -20,7 +20,13 @@ export default function SpecRow({ icon, label, value, accentColor, dense }) {
           {label}
         </Typography>
       </Box>
-      <Typography sx={{ fontSize: 12.5, fontWeight: 700, textAlign: "right", flexShrink: 0, ml: 1 }}>
+      {/* minWidth:0 + wrapping rather than flexShrink:0 — several Africa Online
+          spec values are long ("25 Mbps — N$550/mo"), and pinning the value
+          open pushed the row past the card edge on narrow phones. */}
+      <Typography sx={{
+        fontSize: 12.5, fontWeight: 700, textAlign: "right", minWidth: 0, ml: 1,
+        overflowWrap: "anywhere",
+      }}>
         {value}
       </Typography>
     </Box>

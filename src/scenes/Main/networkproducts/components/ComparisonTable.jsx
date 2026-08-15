@@ -8,10 +8,14 @@ import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import { categoryById } from "../data/categories";
 
+// Lowest published figure for the product, or null where Africa Online quotes
+// on request. Never coerced to 0 — a 0 would read as "free" in the table.
 function bestPrice(pkg) {
   if (pkg.priceByTerm) return Math.min(...Object.values(pkg.priceByTerm));
-  return pkg.priceMonthly;
+  return pkg.price ?? null;
 }
+
+const fmtPrice = (n) => n.toLocaleString("en-NA", { maximumFractionDigits: 2 });
 
 export default function ComparisonTable({ packages }) {
   const theme = useTheme();
@@ -32,8 +36,8 @@ export default function ComparisonTable({ packages }) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <CompareArrowsRoundedIcon sx={{ color: "text.secondary" }} />
           <Typography sx={{ fontWeight: 700, fontSize: { xs: 13, sm: 14.5 } }}>
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Compare all packages side-by-side</Box>
-            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Compare all packages</Box>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Compare all products side-by-side</Box>
+            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Compare all products</Box>
           </Typography>
         </Box>
         <ExpandMoreRoundedIcon sx={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.25s ease" }} />
@@ -45,19 +49,18 @@ export default function ComparisonTable({ packages }) {
             <Table size="small" sx={{ minWidth: 640 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Package</TableCell>
-                  <TableCell align="right">Speed</TableCell>
-                  <TableCell align="right">Upload</TableCell>
-                  <TableCell align="right">From / Month</TableCell>
-                  <TableCell>Installation</TableCell>
-                  <TableCell>Contract</TableCell>
+                  <TableCell>Product</TableCell>
+                  <TableCell>Category</TableCell>
+                  <TableCell align="right">Headline</TableCell>
+                  <TableCell align="right">From</TableCell>
+                  <TableCell>Billing</TableCell>
                   <TableCell>Best For</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {packages.map((pkg) => {
                   const cat = categoryById[pkg.category];
-                  const isBroadband = pkg.priceByTerm != null;
+                  const from = bestPrice(pkg);
                   return (
                     <TableRow key={pkg.id} hover>
                       <TableCell sx={{ fontWeight: 700 }}>
@@ -69,13 +72,14 @@ export default function ComparisonTable({ packages }) {
                           )}
                         </Box>
                       </TableCell>
-                      <TableCell align="right">{isBroadband ? `${pkg.speedDown} Mbps` : pkg.data}</TableCell>
-                      <TableCell align="right">{isBroadband ? (pkg.speedUp ? `${pkg.speedUp} Mbps` : "—") : "—"}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: isDark ? cat.accent.light : cat.accent.dark }}>
-                        N${bestPrice(pkg).toFixed(2)}
+                      <TableCell sx={{ maxWidth: 170 }}>{cat.shortLabel}</TableCell>
+                      <TableCell align="right">{pkg.headline ?? "—"}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, color: isDark ? cat.accent.light : cat.accent.dark, whiteSpace: "nowrap" }}>
+                        {from != null ? `N$${fmtPrice(from)}` : "On request"}
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 180 }}>{pkg.installation}</TableCell>
-                      <TableCell sx={{ maxWidth: 160 }}>{pkg.contract}</TableCell>
+                      <TableCell sx={{ maxWidth: 170 }}>
+                        {from != null ? `${pkg.priceUnit}${pkg.exVat ? " ex VAT" : ""}` : "Quoted per proposal"}
+                      </TableCell>
                       <TableCell sx={{ maxWidth: 220 }}>{pkg.recommendedFor?.slice(0, 2).join(", ")}</TableCell>
                     </TableRow>
                   );

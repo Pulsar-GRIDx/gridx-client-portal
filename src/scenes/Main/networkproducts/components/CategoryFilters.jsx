@@ -1,6 +1,8 @@
 import { Box, ButtonBase, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { mtc } from "../../../../theme/theme";
+// Shared portal palette — still exported under its original name in theme.js,
+// which other pages depend on, so it is aliased rather than renamed globally.
+import { mtc as brandPalette } from "../../../../theme/theme";
 
 /**
  * Visual pill filter row (emoji + label) replacing plain text tabs.
@@ -14,7 +16,7 @@ export default function CategoryFilters({ categories, active, onChange }) {
   const isDark = theme.palette.mode === "dark";
 
   const items = [
-    { id: "all", label: "All Products", shortLabel: "All", emoji: "✨", accent: { gradient: mtc.gradient, solid: mtc.blue[500], glow: mtc.glow } },
+    { id: "all", label: "All Products", shortLabel: "All", emoji: "✨", accent: { gradient: brandPalette.gradient, solid: brandPalette.blue[500], glow: brandPalette.glow } },
     ...categories,
   ];
 

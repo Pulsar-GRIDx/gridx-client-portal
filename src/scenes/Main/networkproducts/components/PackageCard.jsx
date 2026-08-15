@@ -3,42 +3,52 @@ import {
   Box, Card, Typography, Chip, Divider, Collapse, ButtonBase,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
-import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
-import AllInclusiveRoundedIcon from "@mui/icons-material/AllInclusiveRounded";
-import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
-import EventRepeatRoundedIcon from "@mui/icons-material/EventRepeatRounded";
-import DataUsageRoundedIcon from "@mui/icons-material/DataUsageRounded";
-import CallRoundedIcon from "@mui/icons-material/CallRounded";
-import SmsRoundedIcon from "@mui/icons-material/SmsRounded";
-import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import SimCardRoundedIcon from "@mui/icons-material/SimCardRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
+import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
+import MemoryRoundedIcon from "@mui/icons-material/MemoryRounded";
+import CloudRoundedIcon from "@mui/icons-material/CloudRounded";
 import { CATEGORY } from "../data/categories";
 import SpecRow from "./SpecRow";
 import StatusBadge from "./StatusBadge";
 
-// Only Mobile lacks an official MTC asset (see branding.js) — Air Fibre and
-// Fibre render category.iconAsset (the real MTC Spectra illustration) instead.
-const CATEGORY_ICON_FALLBACK = {
-  [CATEGORY.MOBILE]: <SimCardRoundedIcon sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />,
+// Africa Online publish a single corporate wordmark rather than per-product
+// marks, so the category badge uses a Material icon per family instead of
+// stretching one logo across three different product types.
+const CATEGORY_ICON = {
+  [CATEGORY.CONNECTIVITY]: <PublicRoundedIcon sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />,
+  [CATEGORY.HARDWARE]: <MemoryRoundedIcon sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />,
+  [CATEGORY.CLOUD]: <CloudRoundedIcon sx={{ fontSize: { xs: 22, sm: 24, md: 26 } }} />,
 };
 
 const FEATURES_COLLAPSED_COUNT = 3;
+const TERMS = [12, 24, 36];
+
+const fmtPrice = (n) => n.toLocaleString("en-NA", { maximumFractionDigits: 2 });
 
 export default function PackageCard({ pkg, category }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const accent = category.accent;
-  const [term, setTerm] = useState(36);
+  const [term, setTerm] = useState(24);
   const [expanded, setExpanded] = useState(false);
 
-  const isBroadband = pkg.priceByTerm != null;
-  const price = isBroadband ? pkg.priceByTerm[term] : pkg.priceMonthly;
-  const extraFeatures = pkg.features.length - FEATURES_COLLAPSED_COUNT;
+  // Three pricing shapes across the Africa Online catalogue:
+  //   byTerm  - LTE Infinity, the only product priced per contract length
+  //   fixed   - a published "from" figure
+  //   none    - Africa Online quotes on request; we show that rather than
+  //             inventing a number (Dedicated Fibre, leased lines, hardware)
+  const byTerm = pkg.priceByTerm != null;
+  const price = byTerm ? pkg.priceByTerm[term] : pkg.price;
+  const hasPrice = price != null;
+
+  const specs = pkg.specs ?? [];
+  const features = pkg.features ?? [];
+  const extraFeatures = features.length - FEATURES_COLLAPSED_COUNT;
 
   return (
     <Card
@@ -64,7 +74,7 @@ export default function PackageCard({ pkg, category }) {
     >
       <StatusBadge label={pkg.statusBadge} gradient={accent.gradient} />
 
-      {/* Icon + category chip */}
+      {/* Icon + verification chip */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
         <Box sx={{
           width: { xs: 44, sm: 48, md: 52 }, height: { xs: 44, sm: 48, md: 52 }, borderRadius: "16px",
@@ -72,19 +82,7 @@ export default function PackageCard({ pkg, category }) {
           background: accent.gradient, color: "#fff", flexShrink: 0,
           boxShadow: `0 8px 20px -6px ${accent.glow}`,
         }}>
-          {category.iconAsset ? (
-            <Box
-              component="img"
-              src={category.iconAsset}
-              alt=""
-              sx={{
-                width: "56%", height: "56%", objectFit: "contain",
-                filter: category.iconAssetInvert ? "brightness(0) invert(1)" : "none",
-              }}
-            />
-          ) : (
-            CATEGORY_ICON_FALLBACK[pkg.category]
-          )}
+          {CATEGORY_ICON[pkg.category]}
         </Box>
         {!pkg.verified && (
           <Chip
@@ -108,45 +106,53 @@ export default function PackageCard({ pkg, category }) {
         {pkg.tagline}
       </Typography>
 
-      {/* Speed / data badge */}
-      <Box sx={{ mb: 2 }}>
-        {isBroadband ? (
+      {/* Headline capability chip (speed, capacity or scope depending on family) */}
+      {pkg.headline && (
+        <Box sx={{ mb: 2 }}>
           <Chip
-            label={`⬇ ${pkg.speedDown} Mbps`}
+            icon={<BoltRoundedIcon sx={{ fontSize: 15, color: `${isDark ? accent.light : accent.dark} !important` }} />}
+            label={pkg.headline}
             sx={{
-              fontWeight: 800, fontSize: 14, height: 32, px: 0.5,
+              fontWeight: 800, fontSize: 13, height: 32, px: 0.5, maxWidth: "100%",
               bgcolor: `${accent.solid}1a`, color: isDark ? accent.light : accent.dark,
             }}
           />
+        </Box>
+      )}
+
+      {/* Price */}
+      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.6, mb: byTerm ? 1 : 0.5, flexWrap: "wrap" }}>
+        {hasPrice ? (
+          <>
+            {pkg.priceFrom && (
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: "text.secondary" }}>from</Typography>
+            )}
+            <Typography sx={{
+              fontSize: { xs: 30, sm: 33, md: 36 }, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1,
+              backgroundImage: accent.gradient, backgroundClip: "text", WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}>
+              N${fmtPrice(price)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {pkg.priceUnit}{pkg.exVat ? " ex VAT" : ""}
+            </Typography>
+          </>
         ) : (
-          <Chip
-            icon={<DataUsageRoundedIcon sx={{ fontSize: 15, color: `${isDark ? accent.light : accent.dark} !important` }} />}
-            label={`${pkg.data} / ${pkg.validity}`}
-            sx={{
-              fontWeight: 800, fontSize: 13, height: 32, px: 0.5,
-              bgcolor: `${accent.solid}1a`, color: isDark ? accent.light : accent.dark,
-            }}
-          />
+          // No published figure — say so plainly rather than rendering "N$0".
+          <Typography sx={{
+            fontSize: { xs: 21, sm: 22, md: 23 }, fontWeight: 900, letterSpacing: "-0.01em", lineHeight: 1.2,
+            backgroundImage: accent.gradient, backgroundClip: "text", WebkitBackgroundClip: "text",
+            color: "transparent",
+          }}>
+            Pricing on request
+          </Typography>
         )}
       </Box>
 
-      {/* Price */}
-      <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.6, mb: isBroadband ? 1 : 0.5, flexWrap: "wrap" }}>
-        <Typography sx={{
-          fontSize: { xs: 32, sm: 35, md: 38 }, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1,
-          backgroundImage: accent.gradient, backgroundClip: "text", WebkitBackgroundClip: "text",
-          color: "transparent",
-        }}>
-          N${price.toFixed(price % 1 === 0 ? 0 : 2)}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {isBroadband ? "/ month" : pkg.billingNote}
-        </Typography>
-      </Box>
-
-      {isBroadband && (
-        <Box sx={{ display: "flex", gap: 0.75, mb: 2.5 }}>
-          {[12, 24, 36].map((t) => (
+      {byTerm && (
+        <Box sx={{ display: "flex", gap: 0.75, mb: 2.5, mt: 1 }}>
+          {TERMS.map((t) => (
             <ButtonBase
               key={t}
               onClick={() => setTerm(t)}
@@ -165,33 +171,31 @@ export default function PackageCard({ pkg, category }) {
         </Box>
       )}
 
-      <Divider sx={{ mb: 1 }} />
+      <Divider sx={{ mt: byTerm ? 0 : 1.5, mb: 1 }} />
 
-      {/* Spec rows */}
-      <Box sx={{ mb: 1 }}>
-        {isBroadband ? (
-          <>
-            <SpecRow icon={<ArrowDownwardRoundedIcon sx={{ fontSize: 13 }} />} label="Download" value={`${pkg.speedDown} Mbps`} accentColor={accent.solid} dense />
-            <SpecRow icon={<ArrowUpwardRoundedIcon sx={{ fontSize: 13 }} />} label="Upload" value={pkg.speedUp ? `${pkg.speedUp} Mbps` : "Not publicly listed"} accentColor={accent.solid} dense />
-            <SpecRow icon={<AllInclusiveRoundedIcon sx={{ fontSize: 13 }} />} label="Data" value={pkg.unlimited ? "Unlimited" : pkg.data} accentColor={accent.solid} dense />
-            <SpecRow icon={<BuildRoundedIcon sx={{ fontSize: 13 }} />} label="Installation" value={pkg.installation} accentColor={accent.solid} dense />
-            <SpecRow icon={<EventRepeatRoundedIcon sx={{ fontSize: 13 }} />} label="Contract" value={pkg.contract} accentColor={accent.solid} dense />
-          </>
-        ) : (
-          <>
-            <SpecRow icon={<DataUsageRoundedIcon sx={{ fontSize: 13 }} />} label="Data" value={pkg.data} accentColor={accent.solid} dense />
-            <SpecRow icon={<CallRoundedIcon sx={{ fontSize: 13 }} />} label="Minutes" value={pkg.minutes} accentColor={accent.solid} dense />
-            <SpecRow icon={<SmsRoundedIcon sx={{ fontSize: 13 }} />} label="SMS" value={pkg.sms} accentColor={accent.solid} dense />
-            <SpecRow icon={<ScheduleRoundedIcon sx={{ fontSize: 13 }} />} label="Validity" value={pkg.validity} accentColor={accent.solid} dense />
-          </>
-        )}
-      </Box>
-
-      <Divider sx={{ mb: 1.5 }} />
+      {/* Spec rows — generic label/value pairs so a fibre tier list, a mailbox
+          size table and a domain price list can all use the same component. */}
+      {specs.length > 0 && (
+        <>
+          <Box sx={{ mb: 1 }}>
+            {specs.map((s) => (
+              <SpecRow
+                key={s.label}
+                icon={<ChevronRightRoundedIcon sx={{ fontSize: 13 }} />}
+                label={s.label}
+                value={s.value}
+                accentColor={accent.solid}
+                dense
+              />
+            ))}
+          </Box>
+          <Divider sx={{ mb: 1.5 }} />
+        </>
+      )}
 
       {/* Feature checklist */}
       <Box sx={{ mb: 2 }}>
-        {pkg.features.slice(0, FEATURES_COLLAPSED_COUNT).map((f, i) => (
+        {features.slice(0, FEATURES_COLLAPSED_COUNT).map((f, i) => (
           <Box key={i} sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 0.6 }}>
             <CheckCircleRoundedIcon sx={{ fontSize: 15, color: accent.solid, mt: 0.1, flexShrink: 0 }} />
             <Typography sx={{ fontSize: 12.5 }}>{f}</Typography>
@@ -200,7 +204,7 @@ export default function PackageCard({ pkg, category }) {
         {extraFeatures > 0 && (
           <>
             <Collapse in={expanded}>
-              {pkg.features.slice(FEATURES_COLLAPSED_COUNT).map((f, i) => (
+              {features.slice(FEATURES_COLLAPSED_COUNT).map((f, i) => (
                 <Box key={i} sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 0.6 }}>
                   <CheckCircleRoundedIcon sx={{ fontSize: 15, color: accent.solid, mt: 0.1, flexShrink: 0 }} />
                   <Typography sx={{ fontSize: 12.5 }}>{f}</Typography>
@@ -245,10 +249,10 @@ export default function PackageCard({ pkg, category }) {
         </Typography>
       )}
 
-      {/* CTA */}
+      {/* CTA — deep-links to the specific Africa Online product page */}
       <ButtonBase
         component="a"
-        href="https://www.mtc.com.na"
+        href={pkg.href}
         target="_blank"
         rel="noopener"
         sx={{
@@ -262,7 +266,7 @@ export default function PackageCard({ pkg, category }) {
           "&:active": { transform: "translateY(0) scale(0.98)" },
         }}
       >
-        View on MTC.com.na
+        {pkg.ctaLabel}
         <OpenInNewRoundedIcon sx={{ fontSize: 15 }} />
       </ButtonBase>
     </Card>
