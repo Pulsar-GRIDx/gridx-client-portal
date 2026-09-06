@@ -1,5 +1,6 @@
 import { useState, useContext } from "react";
 import PropTypes from "prop-types";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import {
   AppBar, Box, Toolbar, IconButton, Typography, Badge, Menu, MenuItem,
   Alert, Tooltip, Chip,
@@ -10,6 +11,7 @@ import { useNotificationData } from "../Data/getNotificationsData";
 import { useData } from "../Data/getData";
 import AuthContext from "../../../context/AuthContext";
 import MenuIcon from "@mui/icons-material/Menu";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import LightModeRoundedIcon from "@mui/icons-material/LightModeRounded";
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
@@ -25,7 +27,9 @@ function TopBar({ handleDrawerToggle }) {
   const { notifications } = useNotificationData();
   const { signalStrengthData } = useData();
   const { userInfo } = useContext(AuthContext);
+  const location = useLocation();
   const isDark = theme.palette.mode === "dark";
+  const isHome = location.pathname === "/";
 
   const [anchorElNoti, setAnchorElNoti] = useState(null);
   const notificationsCount = notifications?.length || 0;
@@ -57,6 +61,26 @@ function TopBar({ handleDrawerToggle }) {
         >
           <MenuIcon />
         </IconButton>
+
+        <Tooltip title="Home">
+          <span>
+            <IconButton
+              component={RouterLink}
+              to="/"
+              disabled={isHome}
+              size="small"
+              sx={{
+                mr: 1,
+                color: isHome ? (isDark ? mtc.blue[300] : mtc.blue[600]) : "inherit",
+                border: `1px solid ${isHome ? (isDark ? "rgba(31,99,242,0.35)" : "rgba(13,79,219,0.25)") : "transparent"}`,
+                borderRadius: 0.5,
+                "&.Mui-disabled": { color: isDark ? mtc.blue[300] : mtc.blue[600] },
+              }}
+            >
+              <HomeRoundedIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
