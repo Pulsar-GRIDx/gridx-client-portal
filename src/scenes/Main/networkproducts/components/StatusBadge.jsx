@@ -30,7 +30,7 @@ export default function StatusBadge({ label, gradient }) {
     <Box sx={{
       position: "absolute", top: -14, left: 24, zIndex: 2,
       display: "flex", alignItems: "center", gap: 0.5,
-      px: 1.5, py: 0.6, borderRadius: 99,
+      px: 1.5, py: 0.6, borderRadius: "2px",
       background: gradient,
       boxShadow: "0 6px 16px -4px rgba(0,0,0,0.35)",
       animation: ANIMATED.has(label) ? `${pulse} 2.4s ease-in-out infinite` : "none",

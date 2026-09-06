@@ -40,20 +40,19 @@ export default function CategoryFilters({ categories, active, onChange }) {
             onClick={() => onChange(item.id)}
             sx={{
               display: "flex", alignItems: "center", gap: 1, flexShrink: 0,
-              minHeight: 44, px: 2, py: 1, borderRadius: 99,
+              minHeight: 44, px: 2, py: 1, borderRadius: "2px",
               scrollSnapAlign: "start",
-              border: `1.5px solid ${isActive ? "transparent" : (isDark ? "rgba(148,163,184,0.18)" : "#e2e8f0")}`,
-              background: isActive ? item.accent.gradient : (isDark ? "rgba(255,255,255,0.02)" : "#fff"),
-              boxShadow: isActive ? `0 8px 20px -6px ${item.accent.glow}` : "none",
-              transition: "all 0.2s cubic-bezier(.2,.8,.2,1)",
-              "&:hover": { transform: "translateY(-1px)", borderColor: isActive ? "transparent" : item.accent.solid },
-              "&:active": { transform: "scale(0.96)" },
+              border: `1.5px solid ${isActive ? item.accent.solid : (isDark ? "rgba(148,163,184,0.18)" : "#e2e8f0")}`,
+              background: isActive ? (isDark ? "rgba(31,99,242,0.14)" : "rgba(13,79,219,0.06)") : (isDark ? "rgba(255,255,255,0.02)" : "#fff"),
+              boxShadow: "none",
+              transition: "border-color 0.15s ease, background-color 0.15s ease",
+              "&:hover": { borderColor: item.accent.solid },
             }}
           >
             <Typography sx={{ fontSize: 16, lineHeight: 1 }}>{item.emoji}</Typography>
             <Typography sx={{
               fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
-              color: isActive ? "#fff" : "text.primary",
+              color: isActive ? item.accent.solid : "text.primary",
             }}>
               <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>{item.label}</Box>
               <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>{item.shortLabel}</Box>

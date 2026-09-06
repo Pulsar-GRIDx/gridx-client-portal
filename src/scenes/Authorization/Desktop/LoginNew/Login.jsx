@@ -114,7 +114,7 @@ function LoginDesktop() {
           alignItems: { xs: "center", md: "flex-start" }, textAlign: { xs: "center", md: "left" },
         }}>
           <Box sx={{
-            width: 52, height: 52, borderRadius: "16px", mb: 2.5,
+            width: 52, height: 52, borderRadius: "4px", mb: 2.5,
             display: "flex", alignItems: "center", justifyContent: "center",
             bgcolor: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.3)",
           }}>

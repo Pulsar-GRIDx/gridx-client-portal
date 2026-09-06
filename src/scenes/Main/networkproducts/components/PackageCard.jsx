@@ -67,10 +67,10 @@ export default function PackageCard({ pkg, category }) {
       {/* Icon + category chip */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
         <Box sx={{
-          width: { xs: 44, sm: 48, md: 52 }, height: { xs: 44, sm: 48, md: 52 }, borderRadius: "16px",
+          width: { xs: 44, sm: 48, md: 52 }, height: { xs: 44, sm: 48, md: 52 }, borderRadius: "4px",
           display: "flex", alignItems: "center", justifyContent: "center",
           background: accent.gradient, color: "#fff", flexShrink: 0,
-          boxShadow: `0 8px 20px -6px ${accent.glow}`,
+          boxShadow: `0 2px 6px -2px ${accent.glow}`,
         }}>
           {category.iconAsset ? (
             <Box

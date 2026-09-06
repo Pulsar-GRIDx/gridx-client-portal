@@ -105,23 +105,37 @@ export const themeSettings = (mode) => {
       body2: { fontSize: 13 },
       overline: { fontWeight: 700, letterSpacing: "0.08em" },
     },
-    shape: { borderRadius: 12 },
+    // Square, technical geometry: a near-flat base radius that the rest of
+    // the app inherits by default. Page-level `sx={{ borderRadius: N }}`
+    // values are theme-relative multipliers (MUI's sx shorthand), so most of
+    // the app sharpens automatically from this one number — see
+    // docs/DESIGN_SYSTEM.md for the handful of literal-px spots that don't.
+    shape: { borderRadius: 3 },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           "*": { scrollbarWidth: "thin", scrollbarColor: `${isDark ? "#334155" : "#cbd5e1"} transparent` },
           "*::-webkit-scrollbar": { width: 8, height: 8 },
-          "*::-webkit-scrollbar-thumb": { backgroundColor: isDark ? "#334155" : "#cbd5e1", borderRadius: 8 },
+          "*::-webkit-scrollbar-thumb": { backgroundColor: isDark ? "#334155" : "#cbd5e1", borderRadius: 2 },
           "*::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+          // Faint 1px grid, not a decoration layered on top of content but the
+          // page's own base coat — fixed so it reads as the surface the UI
+          // sits on rather than something that scrolls with it.
+          body: {
+            backgroundImage: `linear-gradient(${isDark ? "rgba(148,163,184,0.05)" : "rgba(15,23,42,0.035)"} 1px, transparent 1px), linear-gradient(90deg, ${isDark ? "rgba(148,163,184,0.05)" : "rgba(15,23,42,0.035)"} 1px, transparent 1px)`,
+            backgroundSize: "24px 24px",
+            backgroundAttachment: "fixed",
+          },
         },
       },
       MuiButton: {
         styleOverrides: {
-          root: { textTransform: "none", fontWeight: 600, borderRadius: 10, padding: "8px 20px" },
+          root: { textTransform: "none", fontWeight: 600, borderRadius: 2, padding: "8px 20px", letterSpacing: "0.01em" },
           containedPrimary: {
-            backgroundImage: mtc.gradient,
-            boxShadow: `0 8px 20px -6px ${mtc.glow}`,
-            "&:hover": { backgroundImage: mtc.gradientHover, boxShadow: `0 10px 26px -6px ${mtc.glow}` },
+            backgroundImage: "none",
+            backgroundColor: mtc.blue[600],
+            boxShadow: "none",
+            "&:hover": { backgroundColor: mtc.blue[700], boxShadow: "none" },
           },
           outlined: { borderWidth: 1.5, "&:hover": { borderWidth: 1.5 } },
         },
@@ -135,17 +149,18 @@ export const themeSettings = (mode) => {
         styleOverrides: {
           root: {
             backgroundImage: "none",
-            borderRadius: 16,
+            borderRadius: 3,
             backgroundColor: isDark ? "#111a2e" : "#ffffff",
             border: `1px solid ${t.cardBorder}`,
-            boxShadow: t.cardShadow,
-            transition: "box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease",
+            boxShadow: "none",
+            transition: "border-color 0.15s ease",
+            "&:hover": { borderColor: isDark ? "rgba(148,163,184,0.28)" : "rgba(15,23,42,0.16)" },
           },
         },
       },
       MuiChip: {
         styleOverrides: {
-          root: { fontWeight: 600, borderRadius: 8 },
+          root: { fontWeight: 600, borderRadius: 2 },
         },
       },
       MuiTableCell: {
@@ -166,17 +181,17 @@ export const themeSettings = (mode) => {
       },
       MuiOutlinedInput: {
         styleOverrides: {
-          root: { borderRadius: 10 },
+          root: { borderRadius: 2 },
         },
       },
       MuiTooltip: {
         styleOverrides: {
-          tooltip: { backgroundColor: isDark ? "#1e293b" : "#0f172a", fontSize: 11.5, borderRadius: 8, padding: "6px 10px" },
+          tooltip: { backgroundColor: isDark ? "#1e293b" : "#0f172a", fontSize: 11.5, borderRadius: 2, padding: "6px 10px" },
         },
       },
       MuiLinearProgress: {
         styleOverrides: {
-          root: { borderRadius: 8, height: 6 },
+          root: { borderRadius: 1, height: 6 },
         },
       },
       MuiSkeleton: {
@@ -186,7 +201,7 @@ export const themeSettings = (mode) => {
       },
       MuiAlert: {
         styleOverrides: {
-          root: { borderRadius: 10 },
+          root: { borderRadius: 2 },
         },
       },
       MuiDrawer: {

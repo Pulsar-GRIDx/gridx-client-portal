@@ -85,7 +85,7 @@ const Linechart = () => {
           <XAxis dataKey="name" />
           <YAxis label={{ value: 'Daily GB Used', angle: -90, position: 'insideLeft' }} />
           <Tooltip
-            contentStyle={{ backgroundColor: colors.green[700], border:"none", borderRadius:"10px"}}
+            contentStyle={{ backgroundColor: colors.green[700], border:"none", borderRadius:"2px"}}
             labelStyle={{ color: colors.black[300] }}
             itemStyle={{ color: colors.green[300] }}
             cursor={{ stroke: colors.red[600], strokeWidth: 2 }}

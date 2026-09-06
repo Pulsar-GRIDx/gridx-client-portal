@@ -26,7 +26,7 @@ const DisplayCard = ({ title, count, percentage, IconComponent }) => {
   const [percentageDisplay, setPercentageDisplay] = useState(0);
 
   const borderedCard = {
-    borderRadius: "5px",
+    borderRadius: "2px",
     padding: "0px",
     backgroundColor: `${colors.primaryT[400]}`,
   };

@@ -148,7 +148,7 @@ const ChartWeekly = ({ chartSeries, xaxisTitle, yaxisTitle }) => {
   const colors = tokens(theme.palette.mode);
 
   const borderedCard = {
-    borderRadius: "5px",
+    borderRadius: "2px",
     padding: "0px",
     backgroundColor: `${colors.primaryT[400]}`,
   };
